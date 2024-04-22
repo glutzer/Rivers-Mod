@@ -50,11 +50,11 @@
   </ItemGroup>
 
 <ItemGroup>
-  <EditorConfigFiles Remove="D:\VSProjects\Rivers\Rivers\.editorconfig" />
+  <EditorConfigFiles Remove=".editorconfig" />
 </ItemGroup>
 
 <ItemGroup>
-  <None Include="D:\VSProjects\Rivers\Rivers\.editorconfig" />
+  <None Include=".editorconfig" />
 </ItemGroup>
 
 </Project>

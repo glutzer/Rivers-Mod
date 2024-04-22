@@ -1,0 +1,25 @@
+[
+  {
+    "comment": "Large patches of seaweed",
+    "blockCodes": [ "game:seaweed-section" ],
+    "minTemp": 3,
+    "maxTemp": 40,
+    "minRain": 0,
+    "maxRain": 1,
+    "quantity": {
+      "avg": 5,
+      "var": 5
+    },
+    "offsetX": {
+      "avg": 0,
+      "var": 12
+    },
+    "offsetZ": {
+      "avg": 0,
+      "var": 12
+    },
+    "chance": 1,
+    "minWaterDepth": 1,
+    "placement": "UnderSeaWater"
+  }
+]

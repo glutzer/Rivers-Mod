@@ -1,0 +1,10 @@
+[
+  {
+    "op": "add",
+    "file": "blocktypes/clay/chimney.json",
+    "path": "/classByType",
+    "value": {
+      "*-unlit-*": "lightablechimney"
+    }
+  }
+]
