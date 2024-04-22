@@ -57,4 +57,16 @@
   <None Include=".editorconfig" />
 </ItemGroup>
 
+<ItemGroup>
+  <None Update="modinfo.json">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+
+<ItemGroup>
+    <Content Include="assets\**">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+</ItemGroup>
+
 </Project>
