@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CakeBuild", "CakeBuild\CakeBuild.csproj", "{D7725423-1379-4F30-85FE-FD729D35C58B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rivers", "Rivers\Rivers.csproj", "{C7C9EBA5-D789-4FDA-9867-A90800B4F50A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7725423-1379-4F30-85FE-FD729D35C58B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7725423-1379-4F30-85FE-FD729D35C58B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7725423-1379-4F30-85FE-FD729D35C58B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7725423-1379-4F30-85FE-FD729D35C58B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7C9EBA5-D789-4FDA-9867-A90800B4F50A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7C9EBA5-D789-4FDA-9867-A90800B4F50A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7C9EBA5-D789-4FDA-9867-A90800B4F50A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7C9EBA5-D789-4FDA-9867-A90800B4F50A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0F8DC612-DE8B-4BDE-A709-4A51DB1891E4}
+	EndGlobalSection
+EndGlobal
