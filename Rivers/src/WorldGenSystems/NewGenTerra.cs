@@ -99,6 +99,8 @@ public class NewGenTerra : ModStdWorldGen
         api.Event.ServerRunPhase(EnumServerRunPhase.ModsAndConfigReady, LoadGamePre);
         api.Event.InitWorldGenerator(InitWorldGen, "standard");
         api.Event.ChunkColumnGeneration(OnChunkColumnGen, EnumWorldGenPass.Terrain, "standard");
+
+        InitWorldGen();
     }
 
     public void LoadGamePre()
@@ -114,8 +116,6 @@ public class NewGenTerra : ModStdWorldGen
 
     public void InitWorldGen()
     {
-        initialized = true;
-
         LoadGlobalConfig(sapi);
         LandformMapByRegion.Clear();
 
@@ -177,12 +177,15 @@ public class NewGenTerra : ModStdWorldGen
             sapi.World.Seed + 9876 + 1
         );
 
-        tempDataThreadLocal = new ThreadLocal<ThreadLocalTempData>(() => new ThreadLocalTempData
+        if (!initialized)
         {
-            LerpedAmplitudes = new double[terrainGenOctaves],
-            LerpedThresholds = new double[terrainGenOctaves],
-            landformWeights = new float[landType.GetStaticField<LandformsWorldProperty>("landforms").LandFormsByIndex.Length]
-        });
+            tempDataThreadLocal = new ThreadLocal<ThreadLocalTempData>(() => new ThreadLocalTempData
+            {
+                LerpedAmplitudes = new double[terrainGenOctaves],
+                LerpedThresholds = new double[terrainGenOctaves],
+                landformWeights = new float[landType.GetStaticField<LandformsWorldProperty>("landforms").LandFormsByIndex.Length]
+            });
+        }
 
         columnResults = new ColumnResult[chunksize * chunksize];
         layerFullyEmpty = new bool[sapi.WorldManager.MapSizeY];
@@ -199,6 +202,8 @@ public class NewGenTerra : ModStdWorldGen
 
         //landforms = null; // Reset this, useful when /wgen regen command reloads all the generators because landforms gets reloaded from file there.
         // Not reset for now.
+
+        initialized = true;
     }
 
     private static double[] ScaleAdjustedFreqs(double[] vs, float horizontalScale)
@@ -313,6 +318,7 @@ public class NewGenTerra : ModStdWorldGen
         if (landforms == null) // This only needs to be done once, but cannot be done during initWorldGen() because NoiseLandforms. Landforms is sometimes not yet setup at that point (depends on random order of ModSystems registering to events).
         {
             landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
+
             terrainYThresholds = new float[landforms.LandFormsByIndex.Length][];
             for (int i = 0; i < landforms.LandFormsByIndex.Length; i++)
             {
