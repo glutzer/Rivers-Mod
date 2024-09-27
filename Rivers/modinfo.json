@@ -6,7 +6,7 @@
         "sneeze"
     ],
     "description": "Standalone version of rivers and waterwheels.",
-    "version": "3.0.1",
+    "version": "3.3.0",
     "dependencies": {
         "game": ""
     }

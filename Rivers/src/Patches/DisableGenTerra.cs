@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Vintagestory.API.Server;
 using Vintagestory.ServerMods;
+using Vintagestory.ServerMods.NoObf;
 
 namespace Rivers;
 
@@ -30,7 +31,6 @@ public class DisableGenTerra
         {
             ICoreServerAPI api = __instance.GetField<ICoreServerAPI>("api");
             NewGenTerra system = api.ModLoader.GetModSystem<NewGenTerra>();
-            //if (!system.initialized) system.InitWorldGen();
             system.InitWorldGen();
             return false;
         }
@@ -55,6 +55,20 @@ public class DisableGenTerra
         [HarmonyPrefix]
         public static bool Prefix()
         {
+            Type landType = null;
+            Type[] types = AccessTools.GetTypesFromAssembly(Assembly.GetAssembly(typeof(NoiseBase)));
+            foreach (Type type in types)
+            {
+                if (type.Name == "NoiseLandforms")
+                {
+                    landType = type;
+                    break;
+                }
+            }
+            LandformsWorldProperty landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
+
+            if (landforms == null) return true;
+
             return false;
         }
     }
