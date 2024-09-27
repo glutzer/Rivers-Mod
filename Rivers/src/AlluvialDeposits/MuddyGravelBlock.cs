@@ -124,7 +124,7 @@ public class InitialClay : ModStdWorldGen
 
                 if (chunks[height / 32].Data[ChunkIndex3d(x, height % 32, z)] != muddyGravel.Id) continue;
 
-                TickBlock(new BlockPos((32 * request.ChunkX) + x, height, (32 * request.ChunkZ) + z), riverDistance);
+                TickBlock(new BlockPos((32 * request.ChunkX) + x, height, (32 * request.ChunkZ) + z, 0), riverDistance);
             }
         }
     }

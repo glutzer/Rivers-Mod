@@ -66,7 +66,7 @@ public class BlockWaterWheel : BlockMPBase
         BlockPos upper = blockSel.Position.Copy();
         BlockPos lower = blockSel.Position.Copy();
 
-        BlockPos add = facing == BlockFacing.NORTH || facing == BlockFacing.SOUTH ? new BlockPos(1, 0, 0) : new BlockPos(0, 0, 1);
+        BlockPos add = facing == BlockFacing.NORTH || facing == BlockFacing.SOUTH ? new BlockPos(1, 0, 0, 0) : new BlockPos(0, 0, 1, 0);
 
         for (int i = 0; i < radius; i++)
         {

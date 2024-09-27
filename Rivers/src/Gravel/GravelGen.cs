@@ -58,6 +58,8 @@ public class GravelGen : ModStdWorldGen
             gravelMappings.Add(stratumId, gravelId);
         }
 
+        gravelMappings.Add(0, 0);
+
         baseSeaLevel = TerraGenConfig.seaLevel - 1;
     }
 
@@ -93,16 +95,17 @@ public class GravelGen : ModStdWorldGen
                 if (dist < maxDist)
                 {
                     int topRock = topRocks[(z * 32) + x];
+                    int gravelId = gravelMappings[topRock];
 
-                    BlockPos pos = new(startX + x, height + 1, startZ + z);
+                    BlockPos pos = new(startX + x, height + 1, startZ + z, 0);
 
                     blockAccessor.SetBlock(0, pos);
                     pos.Y--;
-                    blockAccessor.SetBlock(gravelMappings[topRock], pos);
+                    blockAccessor.SetBlock(gravelId, pos);
                     pos.Y--;
-                    blockAccessor.SetBlock(gravelMappings[topRock], pos);
+                    blockAccessor.SetBlock(gravelId, pos);
                     pos.Y--;
-                    blockAccessor.SetBlock(gravelMappings[topRock], pos);
+                    blockAccessor.SetBlock(gravelId, pos);
                 }
             }
         }

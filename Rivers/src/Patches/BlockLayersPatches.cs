@@ -32,7 +32,7 @@ public class BlockLayersPatches
 
             for (int i = 4; i < code.Count - 4; i++)
             {
-                if (code[i].opcode == OpCodes.Newobj && code[i].operand == typeof(BlockPos).GetConstructor(new Type[] { }) && code[i + 1].opcode == OpCodes.Stloc_S && code[i + 2].opcode == OpCodes.Ldc_I4_0)
+                if (code[i].opcode == OpCodes.Newobj && code[i].operand == typeof(BlockPos).GetConstructor(Array.Empty<Type>()) && code[i + 1].opcode == OpCodes.Stloc_S && code[i + 2].opcode == OpCodes.Ldc_I4_0)
                 {
                     insertionIndex = i;
                     xOperand = code[i + 3].operand;

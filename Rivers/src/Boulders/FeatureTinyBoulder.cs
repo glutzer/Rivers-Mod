@@ -25,7 +25,7 @@ public class FeatureTinyBoulder : FeatureRiverBoulder
 
         Vec3d centerPos = blockPos.ToVec3d();
 
-        BlockPos tempPos = new();
+        BlockPos tempPos = new(0);
 
         box.ForEachPosition((x, y, z, cPos) =>
         {

@@ -129,7 +129,7 @@ public class GeneratePartialFeatures : WorldGenPartial
         int rain = (GameMath.BiLerpRgbColor(0.5f, 0.5f, climateUpLeft, climateUpRight, climateBotLeft, climateBotRight) >> 8) & 0xFF;
         bool dry = rain < 100;
 
-        BlockPos pos = new(0, 0, 0);
+        BlockPos pos = new(0, 0, 0, 0);
 
         foreach (PartialFeature feature in features)
         {

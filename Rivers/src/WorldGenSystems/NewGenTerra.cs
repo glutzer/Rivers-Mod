@@ -735,7 +735,7 @@ public class NewGenTerra : ModStdWorldGen
                 {
                     int temp = (GameMath.BiLerpRgbColor(localX * chunkBlockDelta, localZ * chunkBlockDelta, climateUpLeft, climateUpRight, climateBotLeft, climateBotRight) >> 16) & 0xFF;
                     float distort = (float)distort2dx.Noise((chunkX * chunkSize) + localX, worldZ) / 20f;
-                    float tempF = TerraGenConfig.GetScaledAdjustedTemperatureFloat(temp, 0) + distort;
+                    float tempF = Climate.GetScaledAdjustedTemperatureFloat(temp, 0) + distort;
                     if (tempF < TerraGenConfig.WaterFreezingTempOnGen) surfaceWaterId = GlobalConfig.lakeIceBlockId;
                 }
 

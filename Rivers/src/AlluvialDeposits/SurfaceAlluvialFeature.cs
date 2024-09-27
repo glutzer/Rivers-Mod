@@ -49,7 +49,7 @@ public class SurfaceAlluvialFeature : PartialFeature
 
             if (distance < radius && height < TerraGenConfig.seaLevel + 10)
             {
-                BlockPos pos = new(x, height, z);
+                BlockPos pos = new(x, height, z, 0);
 
                 blockAccessor.SetBlock(blockId, pos);
             }

@@ -29,7 +29,7 @@ public class FeatureFallenLog : PartialFeature
     {
         int direction = rand.NextInt(2); // 0 - W/E, 1 - N/S.
         int logType;
-        BlockPos offset = new(0, 0, 0);
+        BlockPos offset = new(0, 0, 0, 0);
         int length = 5 + rand.NextInt(5);
 
         //log-grown-aged-we

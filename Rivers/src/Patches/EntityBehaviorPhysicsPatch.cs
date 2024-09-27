@@ -49,11 +49,11 @@ public class EntityBehaviorPhysicsPatch
     */
 
     // Really laggy but if it's just controlled entities it's fine.
-    [HarmonyPatch(typeof(EntityInLiquid))]
+    [HarmonyPatch(typeof(PModuleInLiquid))]
     [HarmonyPatch("DoApply")]
     public static class DoApplyPrefix
     {
-        public static bool Prefix(EntityInLiquid __instance, float dt, Entity entity, EntityPos pos, EntityControls controls)
+        public static bool Prefix(PModuleInLiquid __instance, float dt, Entity entity, EntityPos pos, EntityControls controls)
         {
             if (entity.Swimming && entity.Alive)
             {
