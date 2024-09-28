@@ -504,7 +504,7 @@ public class TectonicPlate
                 {
                     float projection1 = RiverMath.GetProjection(segment.startPos, segment.midPoint, node.parentNode.segments[config.segmentsInRiver - 1].midPoint);
 
-                    if (projection1 < 0.2 || projection1 > 0.8)
+                    if (projection1 is < 0.2f or > 0.8f)
                     {
                         segment.parentInvalid = true;
                     }
@@ -514,7 +514,7 @@ public class TectonicPlate
 
                 float projection2 = RiverMath.GetProjection(segment.startPos, segment.midPoint, node.segments[index - 1].midPoint);
 
-                if (projection2 < 0.2 || projection2 > 0.8)
+                if (projection2 is < 0.2f or > 0.8f)
                 {
                     segment.parentInvalid = true;
                 }

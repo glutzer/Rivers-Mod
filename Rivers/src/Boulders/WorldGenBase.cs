@@ -8,8 +8,15 @@ namespace Rivers;
 
 public abstract class WorldGenBase : ModSystem
 {
-    public override bool ShouldLoad(EnumAppSide side) => side == EnumAppSide.Server;
-    public override double ExecuteOrder() => 0;
+    public override bool ShouldLoad(EnumAppSide side)
+    {
+        return side == EnumAppSide.Server;
+    }
+
+    public override double ExecuteOrder()
+    {
+        return 0;
+    }
 
     public GlobalConfig globalConfig;
 

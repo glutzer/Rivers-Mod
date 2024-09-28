@@ -964,6 +964,9 @@ public class NewGenTerra : ModStdWorldGen
     public struct VectorXZ
     {
         public double X, Z;
-        public static VectorXZ operator *(VectorXZ a, double b) => new() { X = a.X * b, Z = a.Z * b };
+        public static VectorXZ operator *(VectorXZ a, double b)
+        {
+            return new() { X = a.X * b, Z = a.Z * b };
+        }
     }
 }

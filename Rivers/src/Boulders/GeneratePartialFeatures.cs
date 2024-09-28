@@ -9,7 +9,10 @@ namespace Rivers;
 
 public class GeneratePartialFeatures : WorldGenPartial
 {
-    public override double ExecuteOrder() => 0.15;
+    public override double ExecuteOrder()
+    {
+        return 0.15;
+    }
 
     public IWorldGenBlockAccessor blockAccessor;
 

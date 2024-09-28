@@ -16,7 +16,7 @@ public class SurfaceAlluvialFeature : PartialFeature
 
     public override bool CanGenerate(int localX, int posY, int localZ, ushort riverDistance, bool dry)
     {
-        return riverDistance < 5 && riverDistance > 0;
+        return riverDistance is < 5 and > 0;
     }
 
     public override void Generate(BlockPos blockPos, IServerChunk[] chunkData, LCGRandom rand, Vec2d chunkStart, Vec2d chunkEnd, IBlockAccessor blockAccessor, int rockId, bool dry, ushort[] heightMap)
