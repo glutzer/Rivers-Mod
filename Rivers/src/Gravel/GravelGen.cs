@@ -6,15 +6,17 @@ using Vintagestory.ServerMods;
 
 namespace Rivers;
 
+/// <summary>
+/// Generates gravel on banks of rivers.
+/// </summary>
 public class GravelGen : ModStdWorldGen
 {
     public Noise gravelNoise = new(0, 0.01f, 2);
 
     public Dictionary<int, int> gravelMappings = new();
 
-    public ICoreServerAPI sapi;
-
-    public IBlockAccessor blockAccessor;
+    public ICoreServerAPI sapi = null!;
+    public IBlockAccessor blockAccessor = null!;
 
     public override double ExecuteOrder()
     {
@@ -27,7 +29,7 @@ public class GravelGen : ModStdWorldGen
 
         sapi = api;
 
-        if (RiverConfig.Loaded.gravel)
+        if (RiverConfig.Loaded.gravelBeaches)
         {
             sapi.Event.InitWorldGenerator(InitWorldGen, "standard");
             sapi.Event.GetWorldgenBlockAccessor(OnWorldGenBlockAccessor);
@@ -77,11 +79,16 @@ public class GravelGen : ModStdWorldGen
         int[] topRocks = mapChunk.TopRockIdMap;
         ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
 
+        // If this chunk doesn't have river distance, it's outside of the range needed to generate gravel.
+        if (riverDistance == null) return;
+
         for (int x = 0; x < 32; x++)
         {
             for (int z = 0; z < 32; z++)
             {
                 ushort dist = riverDistance[(z * 32) + x];
+
+                // Below 10 distance, no gravel is generated.
                 if (dist > 10) continue;
 
                 int height = heightMap[(z * 32) + x];

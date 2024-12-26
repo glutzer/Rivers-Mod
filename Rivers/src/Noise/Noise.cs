@@ -18,7 +18,7 @@ public class Noise
         noise.SetFractalGain(gain);
         noise.SetFractalLacunarity(lacunarity);
 
-        noise.SetFractalWeightedStrength(-0.20f); // Achieves values closer to 0.
+        noise.SetFractalWeightedStrength(-0.2f); // Achieves values closer to 0.
 
         noise.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Euclidean); // Euclidean default.
         noise.SetCellularReturnType(FastNoise.CellularReturnType.Distance); // F1 default.

@@ -8,8 +8,8 @@ namespace Rivers;
 /// </summary>
 public abstract class WorldGenPartial : WorldGenBase
 {
-    public ICoreServerAPI sapi;
-    public LCGRandom chunkRand;
+    public ICoreServerAPI sapi = null!;
+    public LCGRandom chunkRand = null!;
 
     public abstract int ChunkRange { get; }
 

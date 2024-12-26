@@ -19,7 +19,7 @@ public class ChunkTesselatorManagerPatch
         }
     }
 
-    public static ClientChunk BottomChunk { get; set; }
+    public static ClientChunk BottomChunk { get; set; } = null!;
 
     [HarmonyPatch(typeof(ChunkTesselatorManager))]
     [HarmonyPatch("TesselateChunk")]
@@ -40,7 +40,7 @@ public class ChunkTesselatorManagerPatch
         [HarmonyPostfix]
         public static void Postfix()
         {
-            BottomChunk = null;
+            BottomChunk = null!;
         }
     }
 
@@ -93,6 +93,6 @@ public class ChunkTesselatorManagerPatch
             varsTwo.riverSpeed = RiversMod.RiverSpeed;
         }
 
-        BottomChunk = null;
+        BottomChunk = null!;
     }
 }

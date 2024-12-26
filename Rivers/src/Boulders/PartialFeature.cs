@@ -8,7 +8,6 @@ namespace Rivers;
 
 public class PartialFeature
 {
-    public int chunkSize = 32;
     public ICoreServerAPI sapi;
     public int mapHeight;
 
@@ -23,7 +22,7 @@ public class PartialFeature
 
     public int seaLevel;
 
-    public Noise noise;
+    public Noise noise = null!;
 
     public PartialFeature(ICoreServerAPI sapi)
     {
@@ -43,16 +42,6 @@ public class PartialFeature
     public virtual bool CanGenerate(int localX, int posY, int localZ, ushort riverDistance, bool dry)
     {
         return true;
-    }
-
-    public int LocalChunkIndex2D(int localX, int localZ)
-    {
-        return (localZ * chunkSize) + localX;
-    }
-
-    public int LocalChunkIndex3D(int localX, int localY, int localZ)
-    {
-        return (((localY * chunkSize) + localZ) * chunkSize) + localX;
     }
 }
 

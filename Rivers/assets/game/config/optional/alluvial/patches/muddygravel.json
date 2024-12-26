@@ -1,8 +1,0 @@
-[
-  {
-    "op": "add",
-    "file": "blocktypes/soil/muddygravel.json",
-    "path": "/class",
-    "value": "muddygravel"
-  }
-]

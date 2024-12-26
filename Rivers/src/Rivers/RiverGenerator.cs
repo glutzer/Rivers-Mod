@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using OpenTK.Mathematics;
+using System;
+using System.Runtime.CompilerServices;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
@@ -19,222 +20,207 @@ public class RiverGenerator
     {
         double multi = 256f / sapi.WorldManager.MapSizeY;
 
-        riverDepth = RiverConfig.Loaded.riverDepth * multi;
-        baseDepth = RiverConfig.Loaded.baseDepth * multi;
+        RiverConfig config = RiverConfig.Loaded;
 
-        riverDistortionX = new Noise(0, RiverConfig.Loaded.riverFrequency, RiverConfig.Loaded.riverOctaves, RiverConfig.Loaded.riverGain, RiverConfig.Loaded.riverLacunarity);
-        riverDistortionZ = new Noise(2, RiverConfig.Loaded.riverFrequency, RiverConfig.Loaded.riverOctaves, RiverConfig.Loaded.riverGain, RiverConfig.Loaded.riverLacunarity);
-        strength = RiverConfig.Loaded.riverStrength;
-    }
+        riverDepth = config.riverDepth * multi;
+        baseDepth = config.baseDepth * multi;
 
-    // Curbs segments to test.
-    public void ValidateSegments(RiverSegment[] segments, double maxValleyWidth, double x, double z, List<RiverSegment> valid)
-    {
-        double distX = riverDistortionX.GetNoise(x, z);
-        double distZ = riverDistortionZ.GetNoise(x, z);
-        Vec2d point = new(x + (distX * strength), z + (distZ * strength));
-
-        for (int b = 0; b < segments.Length; b++)
-        {
-            RiverSegment segment = segments[b];
-
-            float riverProjection = RiverMath.GetProjection(point, segment.riverNode.startPos, segment.riverNode.endPos); // How far along the main river for size calculation.
-
-            float riverSize = GameMath.Lerp(segment.riverNode.startSize, segment.riverNode.endSize, riverProjection); // Size of river.
-
-            float segmentProjection = RiverMath.GetProjection(point, segment.startPos, segment.endPos);
-
-            RiverSegment[] connectors;
-            if (segmentProjection > 0.5)
-            {
-                connectors = segment.childrenArray;
-            }
-            else
-            {
-                connectors = new RiverSegment[] { segment.parent };
-            }
-
-            Vec2d lerpedStart = new();
-            Vec2d lerpedEnd = new();
-
-            double minDistance = 5000;
-
-            for (int i = 0; i < connectors.Length; i++)
-            {
-                RiverSegment connector = connectors[i];
-
-                float midPointProjection;
-                if (segment.midPoint != connector.midPoint)
-                {
-                    midPointProjection = RiverMath.GetProjection(point, segment.midPoint, connector.midPoint);
-                }
-                else
-                {
-                    midPointProjection = 1;
-                }
-
-                // Projections onto lines with equal length are NaN.
-                if (segmentProjection > 0.5)
-                {
-                    if (connector.parentInvalid) midPointProjection = 0;
-
-                    // Lerp to the halfway point if the river fork doesn't match up.
-                    if (connector.riverNode.startSize < segment.riverNode.endSize)
-                    {
-                        riverSize = GameMath.Lerp(connector.riverNode.startSize, connector.riverNode.endSize, 0.5f);
-                    }
-
-                    lerpedStart.X = GameMath.Lerp(segment.midPoint.X, connector.startPos.X, midPointProjection);
-                    lerpedStart.Y = GameMath.Lerp(segment.midPoint.Y, connector.startPos.Y, midPointProjection);
-                    lerpedEnd.X = GameMath.Lerp(segment.endPos.X, connector.midPoint.X, midPointProjection);
-                    lerpedEnd.Y = GameMath.Lerp(segment.endPos.Y, connector.midPoint.Y, midPointProjection);
-                }
-                else
-                {
-                    if (segment.parentInvalid) midPointProjection = 0;
-
-                    lerpedStart.X = GameMath.Lerp(segment.startPos.X, connector.midPoint.X, midPointProjection);
-                    lerpedStart.Y = GameMath.Lerp(segment.startPos.Y, connector.midPoint.Y, midPointProjection);
-                    lerpedEnd.X = GameMath.Lerp(segment.midPoint.X, connector.endPos.X, midPointProjection);
-                    lerpedEnd.Y = GameMath.Lerp(segment.midPoint.Y, connector.endPos.Y, midPointProjection);
-                }
-
-                double distance = RiverMath.DistanceToLine(point, lerpedStart, lerpedEnd);
-                distance -= riverSize;
-
-                minDistance = Math.Min(minDistance, distance);
-            }
-
-            if (minDistance <= maxValleyWidth + (strength * 2) + 32 && !valid.Contains(segment))
-            {
-                valid.Add(segment);
-            }
-        }
+        riverDistortionX = new Noise(0, config.riverFrequency, config.riverOctaves, config.riverGain, config.riverLacunarity);
+        riverDistortionZ = new Noise(2, config.riverFrequency, config.riverOctaves, config.riverGain, config.riverLacunarity);
+        strength = config.riverDistortionStrength;
     }
 
     public RiverSample SampleRiver(RiverSegment[] segments, double x, double z)
     {
         RiverSample riverSample = new();
 
-        if (segments.Length == 0) return riverSample;
-
         double closestLine = double.PositiveInfinity;
 
         double distX = riverDistortionX.GetNoise(x, z);
         double distZ = riverDistortionZ.GetNoise(x, z);
 
-        Vec2d point = new(x + (distX * strength), z + (distZ * strength));
+        Vector2d point = new(x + (distX * strength), z + (distZ * strength));
 
         for (int s = 0; s < segments.Length; s++)
         {
             RiverSegment segment = segments[s];
 
             float riverProjection = RiverMath.GetProjection(point, segment.riverNode.startPos, segment.riverNode.endPos); // How far along the main river for size calculation.
-
             float riverSize = GameMath.Lerp(segment.riverNode.startSize, segment.riverNode.endSize, riverProjection); // Size of river.
-
             float segmentProjection = RiverMath.GetProjection(point, segment.startPos, segment.endPos);
 
-            RiverSegment[] connectors;
+            // If halfway into the segment, it's sampling every child.
+            // Otherwise, it samples the segment's parent.
+
             if (segmentProjection > 0.5)
             {
-                connectors = segment.childrenArray;
+                if (segment.children.Count == 0)
+                {
+                    riverSample = SampleSelf(segment, riverSample, point, riverSize, ref closestLine);
+                }
+                else
+                {
+                    foreach (RiverSegment childSegment in segment.children)
+                    {
+                        riverSample = SampleConnector(segment, childSegment, segmentProjection, riverSample, point, riverSize, ref closestLine);
+                    }
+                }
             }
             else
             {
-                connectors = new RiverSegment[] { segment.parent };
-            }
-
-            Vec2d lerpedStart = new();
-            Vec2d lerpedEnd = new();
-
-            for (int i = 0; i < connectors.Length; i++)
-            {
-                RiverSegment connector = connectors[i];
-
-                float midPointProjection;
-                if (segment.midPoint != connector.midPoint)
+                if (segment.parent == null)
                 {
-                    midPointProjection = RiverMath.GetProjection(point, segment.midPoint, connector.midPoint);
+                    riverSample = SampleSelf(segment, riverSample, point, riverSize, ref closestLine);
                 }
                 else
                 {
-                    midPointProjection = 1;
+                    riverSample = SampleConnector(segment, segment.parent, segmentProjection, riverSample, point, riverSize, ref closestLine);
                 }
-
-                // Projections onto lines with equal length are NaN.
-                if (segmentProjection > 0.5)
-                {
-                    if (connector.parentInvalid) midPointProjection = 0;
-
-                    // Lerp to the halfway point if the river fork doesn't match up.
-                    if (connector.riverNode.startSize < segment.riverNode.endSize)
-                    {
-                        riverSize = GameMath.Lerp(connector.riverNode.startSize, connector.riverNode.endSize, 0.5f);
-                    }
-
-                    lerpedStart.X = GameMath.Lerp(segment.midPoint.X, connector.startPos.X, midPointProjection);
-                    lerpedStart.Y = GameMath.Lerp(segment.midPoint.Y, connector.startPos.Y, midPointProjection);
-                    lerpedEnd.X = GameMath.Lerp(segment.endPos.X, connector.midPoint.X, midPointProjection);
-                    lerpedEnd.Y = GameMath.Lerp(segment.endPos.Y, connector.midPoint.Y, midPointProjection);
-                }
-                else
-                {
-                    if (segment.parentInvalid) midPointProjection = 0;
-
-                    lerpedStart.X = GameMath.Lerp(segment.startPos.X, connector.midPoint.X, midPointProjection);
-                    lerpedStart.Y = GameMath.Lerp(segment.startPos.Y, connector.midPoint.Y, midPointProjection);
-                    lerpedEnd.X = GameMath.Lerp(segment.midPoint.X, connector.endPos.X, midPointProjection);
-                    lerpedEnd.Y = GameMath.Lerp(segment.midPoint.Y, connector.endPos.Y, midPointProjection);
-                }
-
-                double distance = RiverMath.DistanceToLine(point, lerpedStart, lerpedEnd);
-
-                // Calculate bank factor.
-                if (distance <= riverSize) // If within bank distance.
-                {
-                    if (segment.riverNode.lake)
-                    {
-                        closestLine = -100;
-                        riverSample.flowVectorX = 0;
-                        riverSample.flowVectorZ = 0;
-                    }
-
-                    if (distance < closestLine)
-                    {
-                        // If a bank exists, the flow vector is the same as it.
-                        Vec2d segmentFlowVector = lerpedStart - lerpedEnd;
-                        segmentFlowVector.Normalize();
-
-                        // Round the flow to group together sets of water.
-                        segmentFlowVector.X = Math.Round(segmentFlowVector.X, 1);
-                        segmentFlowVector.Y = Math.Round(segmentFlowVector.Y, 1);
-
-                        segmentFlowVector.Normalize();
-
-                        riverSample.flowVectorX = (float)segmentFlowVector.X * segment.riverNode.speed;
-                        riverSample.flowVectorZ = (float)segmentFlowVector.Y * segment.riverNode.speed;
-
-                        closestLine = distance;
-                    }
-
-                    riverSample.riverDistance = 0;
-
-                    double lerp = RiverMath.InverseLerp(distance, riverSize, 0);
-                    lerp = Math.Sqrt(1 - Math.Pow(1 - lerp, 2));
-
-                    riverSample.bankFactor = Math.Max(Math.Max(Math.Sqrt(riverSize) * riverDepth, baseDepth) * lerp, riverSample.bankFactor); // Deepest bank.
-
-                    continue;
-                }
-
-                distance -= riverSize;
-
-                if (distance < 0) distance = 0;
-
-                riverSample.riverDistance = Math.Min(distance, riverSample.riverDistance); // Lowest distance to the edge of a river.
             }
         }
+
+        return riverSample;
+    }
+
+    /// <summary>
+    /// Sample self on a segment with no children, or if the parent is null.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public RiverSample SampleSelf(RiverSegment segment, RiverSample riverSample, Vector2d point, float riverSize, ref double closestLine)
+    {
+        double distance = RiverMath.DistanceToLine(point, segment.startPos, segment.endPos);
+
+        // Calculate bank factor.
+        if (distance <= riverSize) // If within bank distance.
+        {
+            if (segment.riverNode.isLake)
+            {
+                closestLine = -100;
+                riverSample.flowVectorX = 0;
+                riverSample.flowVectorZ = 0;
+            }
+
+            if (distance < closestLine)
+            {
+                // If a bank exists, the flow vector is the same as it.
+                Vector2d segmentFlowVector = segment.startPos - segment.endPos;
+                segmentFlowVector.Normalize();
+
+                // Round the flow to group together sets of water.
+                segmentFlowVector.X = Math.Round(segmentFlowVector.X, 1);
+                segmentFlowVector.Y = Math.Round(segmentFlowVector.Y, 1);
+
+                segmentFlowVector.Normalize();
+
+                riverSample.flowVectorX = (float)segmentFlowVector.X * segment.riverNode.speed;
+                riverSample.flowVectorZ = (float)segmentFlowVector.Y * segment.riverNode.speed;
+
+                closestLine = distance;
+            }
+
+            riverSample.riverDistance = 0;
+
+            double lerp = RiverMath.InverseLerp(distance, riverSize, 0);
+            lerp = Math.Sqrt(1 - Math.Pow(1 - lerp, 2));
+
+            riverSample.bankFactor = Math.Max(Math.Max(Math.Sqrt(riverSize) * riverDepth, baseDepth) * lerp, riverSample.bankFactor); // Deepest bank.
+
+            return riverSample;
+        }
+
+        distance -= riverSize;
+
+        if (distance < 0) distance = 0;
+
+        riverSample.riverDistance = Math.Min(distance, riverSample.riverDistance); // Lowest distance to the edge of a river.
+
+        return riverSample;
+    }
+
+    /// <summary>
+    /// Sample a connector. Connector may be null if the segment's parent is null.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public RiverSample SampleConnector(RiverSegment segment, RiverSegment connector, float projection, RiverSample riverSample, Vector2d point, float riverSize, ref double closestLine)
+    {
+        float midPointProjection;
+        Vector2d lerpedStart = new();
+        Vector2d lerpedEnd = new();
+
+        midPointProjection = RiverMath.GetProjection(point, segment.midPoint, connector.midPoint);
+
+        // Connector is not null when projected 0.5 into the line, since only the parent can be null.
+        if (projection > 0.5)
+        {
+            // If the parent is invalid, don't curve at all.
+            if (connector.parentInvalid) midPointProjection = 0;
+
+            // Lerp to the halfway point if the river fork doesn't match up.
+            if (connector.riverNode.startSize < segment.riverNode.endSize)
+            {
+                riverSize = GameMath.Lerp(connector.riverNode.startSize, connector.riverNode.endSize, 0.5f);
+            }
+
+            lerpedStart.X = GameMath.Lerp(segment.midPoint.X, connector.startPos.X, midPointProjection);
+            lerpedStart.Y = GameMath.Lerp(segment.midPoint.Y, connector.startPos.Y, midPointProjection);
+            lerpedEnd.X = GameMath.Lerp(segment.endPos.X, connector.midPoint.X, midPointProjection);
+            lerpedEnd.Y = GameMath.Lerp(segment.endPos.Y, connector.midPoint.Y, midPointProjection);
+        }
+        else
+        {
+            if (segment.parentInvalid) midPointProjection = 0;
+
+            lerpedStart.X = GameMath.Lerp(segment.startPos.X, connector.midPoint.X, midPointProjection);
+            lerpedStart.Y = GameMath.Lerp(segment.startPos.Y, connector.midPoint.Y, midPointProjection);
+            lerpedEnd.X = GameMath.Lerp(segment.midPoint.X, connector.endPos.X, midPointProjection);
+            lerpedEnd.Y = GameMath.Lerp(segment.midPoint.Y, connector.endPos.Y, midPointProjection);
+        }
+
+        double distance = RiverMath.DistanceToLine(point, lerpedStart, lerpedEnd);
+
+        // Calculate bank factor.
+        if (distance <= riverSize) // If within bank distance.
+        {
+            if (segment.riverNode.isLake)
+            {
+                closestLine = -100;
+                riverSample.flowVectorX = 0;
+                riverSample.flowVectorZ = 0;
+            }
+
+            if (distance < closestLine)
+            {
+                // If a bank exists, the flow vector is the same as it.
+                Vector2d segmentFlowVector = lerpedStart - lerpedEnd;
+                segmentFlowVector.Normalize();
+
+                // Round the flow to group together sets of water.
+                segmentFlowVector.X = Math.Round(segmentFlowVector.X, 1);
+                segmentFlowVector.Y = Math.Round(segmentFlowVector.Y, 1);
+
+                segmentFlowVector.Normalize();
+
+                riverSample.flowVectorX = (float)segmentFlowVector.X * segment.riverNode.speed;
+                riverSample.flowVectorZ = (float)segmentFlowVector.Y * segment.riverNode.speed;
+
+                closestLine = distance;
+            }
+
+            riverSample.riverDistance = 0;
+
+            double lerp = RiverMath.InverseLerp(distance, riverSize, 0);
+            lerp = Math.Sqrt(1 - Math.Pow(1 - lerp, 2));
+
+            riverSample.bankFactor = Math.Max(Math.Max(Math.Sqrt(riverSize) * riverDepth, baseDepth) * lerp, riverSample.bankFactor); // Deepest bank.
+
+            return riverSample;
+        }
+
+        distance -= riverSize;
+
+        if (distance < 0) distance = 0;
+
+        riverSample.riverDistance = Math.Min(distance, riverSample.riverDistance); // Lowest distance to the edge of a river.
 
         return riverSample;
     }

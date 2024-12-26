@@ -5,8 +5,8 @@
     "authors": [
         "sneeze"
     ],
-    "description": "Standalone version of rivers and waterwheels.",
-    "version": "3.3.0",
+    "description": "Standalone version of rivers.",
+    "version": "4.0.0",
     "dependencies": {
         "game": ""
     }

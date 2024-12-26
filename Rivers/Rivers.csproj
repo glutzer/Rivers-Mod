@@ -4,9 +4,14 @@
     <TargetFramework>net7.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>bin\$(Configuration)\Mods\mod</OutputPath>
+    <Nullable>Enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="OpenTK.Mathematics">
+      <HintPath>$(VINTAGE_STORY)/Lib/OpenTK.Mathematics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="VintagestoryAPI">
       <HintPath>$(VINTAGE_STORY)/VintagestoryAPI.dll</HintPath>
       <Private>false</Private>
@@ -50,14 +55,6 @@
   </ItemGroup>
 
 <ItemGroup>
-  <EditorConfigFiles Remove=".editorconfig" />
-</ItemGroup>
-
-<ItemGroup>
-  <None Include=".editorconfig" />
-</ItemGroup>
-
-<ItemGroup>
   <None Update="modinfo.json">
     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
   </None>
@@ -67,6 +64,10 @@
     <Content Include="assets\**">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+</ItemGroup>
+
+<ItemGroup>
+  <Folder Include="assets\game\" />
 </ItemGroup>
 
 </Project>

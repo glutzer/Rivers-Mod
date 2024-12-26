@@ -18,7 +18,7 @@ public abstract class WorldGenBase : ModSystem
         return 0;
     }
 
-    public GlobalConfig globalConfig;
+    public GlobalConfig globalConfig = null!;
 
     public int chunkSize;
 
@@ -34,7 +34,7 @@ public abstract class WorldGenBase : ModSystem
 
     public void LoadGlobalConfig(ICoreServerAPI api)
     {
-        chunkSize = api.World.BlockAccessor.ChunkSize; // 32
+        chunkSize = 32;
 
         regionSize = api.World.BlockAccessor.RegionSize; // 512
         regionChunkSize = regionSize / chunkSize; // 512 / 32 = 16
@@ -58,19 +58,7 @@ public abstract class WorldGenBase : ModSystem
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LocalChunkIndex2D(int localX, int localZ)
-    {
-        return (localZ * chunkSize) + localX;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LocalChunkIndex3D(int localX, int localY, int localZ)
-    {
-        return (((localY * chunkSize) + localZ) * chunkSize) + localX;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static long GlobalChunkIndex2D(int chunkX, int chunkZ, int chunkMapWidth)
+    public static long GlobalChunkIndex2d(int chunkX, int chunkZ, int chunkMapWidth)
     {
         return ((long)chunkZ * chunkMapWidth) + chunkX;
     }

@@ -1,31 +1,25 @@
 ﻿using HarmonyLib;
-using Newtonsoft.Json.Linq;
+using OpenTK.Mathematics;
 using ProtoBuf;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 using Vintagestory.API.Util;
-using Vintagestory.Common;
 using Vintagestory.GameContent;
 
 namespace Rivers;
 
 public class RiversMod : ModSystem
 {
-    public Harmony harmony;
-    public static bool Patched { get; set; } = false;
-    public bool patchedLocal = false;
-    public bool devEnvironment = false;
+    private static Harmony? Harmony { get; set; }
 
     public static float RiverSpeed { get; set; } = 1;
 
-    public IClientNetworkChannel clientChannel;
-    public IServerNetworkChannel serverChannel;
+    public IClientNetworkChannel clientChannel = null!;
+    public IServerNetworkChannel serverChannel = null!;
 
     public override double ExecuteOrder()
     {
@@ -34,111 +28,13 @@ public class RiversMod : ModSystem
 
     public override void AssetsLoaded(ICoreAPI api)
     {
-        if (RiverConfig.Loaded.clayExpansion)
-        {
-            ClayPatch(api);
-        }
-
-        if (RiverConfig.Loaded.riverDeposits)
-        {
-            AddOptionalAssets("alluvial", api.Assets as AssetManager);
-        }
-    }
-
-    public static void ClayPatch(ICoreAPI api)
-    {
-        AssetManager assetManager = api.Assets as AssetManager;
-
-        bool bricklayers = api.ModLoader.IsModEnabled("bricklayers");
-
-        // Get all clayforming recipes.
-        List<IAsset> assets = assetManager.GetMany("recipes/clayforming");
-
-        if (!bricklayers)
-        {
-            foreach (IAsset asset in assets)
-            {
-                try
-                {
-                    // Get token of entire file.
-                    JToken token = JToken.Parse(asset.ToText());
-
-                    // Get ingredients array.
-                    if (token["ingredient"]?["allowedVariants"] != null)
-                    {
-                        // If it contains both blue and fire clay, add the other 2 variants.
-                        JArray array = token["ingredient"]["allowedVariants"] as JArray;
-
-                        bool blue = array.Any(x => x.ToString() == "blue");
-                        bool fire = array.Any(x => x.ToString() == "fire");
-
-                        if (blue && fire)
-                        {
-                            array.Add("brown");
-                            array.Add("red");
-
-                            // Set array.
-                            token["ingredient"]["allowedVariants"] = array;
-
-                            // Convert it back to string and to bytes.
-                            asset.Data = Encoding.UTF8.GetBytes(token.ToString());
-                        }
-                    }
-                }
-                catch
-                {
-                    api.Logger.Log(EnumLogType.Error, $"Rivers: failed to patch clayforming recipe {asset.Name}.");
-                }
-            }
-        }
-
-        AddOptionalAssets("clay", assetManager);
-
-        if (!bricklayers)
-        {
-            AddOptionalAssets("claynobl", assetManager);
-        }
-    }
-
-    public static void AddOptionalAssets(string option, AssetManager assetManager)
-    {
-        string optionalPath = $"config/optional/{option}/";
-
-        List<IAsset> assets = assetManager.GetMany(optionalPath);
-
-        foreach (IAsset asset in assets)
-        {
-            AssetLocation location = asset.Location;
-
-            string path = location.ToString().Replace(optionalPath, "");
-
-            IAsset toChange = assetManager.TryGet(path);
-
-            if (toChange != null)
-            {
-                toChange.Data = new byte[asset.Data.Length];
-                asset.Data.CopyTo(toChange.Data, 0);
-            }
-            else
-            {
-                IAsset newAsset = new Asset(asset.Data, new AssetLocation(path), asset.Origin);
-                assetManager.Assets[new AssetLocation(path)] = newAsset;
-            }
-        }
+        // Would alter assets for clay here, but that's removed.
     }
 
     public override void Start(ICoreAPI api)
     {
-        api.RegisterBlockClass("BlockRiverWaterWheel", typeof(BlockWaterWheel));
-        api.RegisterBlockEntityClass("BERiverWaterWheel", typeof(BEWaterWheel));
-        api.RegisterBlockEntityBehaviorClass("BEBehaviorRiverWaterWheel", typeof(BEBehaviorWaterWheel));
-
-        api.RegisterBlockBehaviorClass("riverblock", typeof(RiverBlockBehavior));
-
-        api.RegisterBlockClass("fullalluvialblock", typeof(FullAlluvialBlock));
-
-        if (RiverConfig.Loaded.clayExpansion) api.RegisterBlockClass("lightablechimney", typeof(LightableChimneyBehavior));
-        if (RiverConfig.Loaded.riverDeposits) api.RegisterBlockClass("muddygravel", typeof(MuddyGravelBlock));
+        // Register all blocks here, but no blocks are currently being registered.
+        // Potentially use the lib and register them that way.
     }
 
     public override void StartClientSide(ICoreClientAPI api)
@@ -147,7 +43,9 @@ public class RiversMod : ModSystem
             .RegisterMessageType(typeof(SpeedMessage))
             .SetMessageHandler<SpeedMessage>(OnSpeedMessage);
 
+#pragma warning disable CS0618 // Type or member is obsolete
         api.RegisterCommand(new RiverZoomCommand());
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 
     public override void StartServerSide(ICoreServerAPI api)
@@ -155,7 +53,9 @@ public class RiversMod : ModSystem
         serverChannel = api.Network.RegisterChannel("rivers")
             .RegisterMessageType(typeof(SpeedMessage));
 
+#pragma warning disable CS0618 // Type or member is obsolete
         api.RegisterCommand(new RiverDebugCommand(api));
+#pragma warning restore CS0618 // Type or member is obsolete
 
         RiverSpeed = RiverConfig.Loaded.riverSpeed;
         api.Event.PlayerJoin += Event_PlayerJoin;
@@ -163,6 +63,7 @@ public class RiversMod : ModSystem
 
     private void Event_PlayerJoin(IServerPlayer byPlayer)
     {
+        // Inform new players what the speed set by the server is.
         serverChannel.SendPacket(new SpeedMessage() { riverSpeed = RiverConfig.Loaded.riverSpeed }, byPlayer);
     }
 
@@ -173,19 +74,18 @@ public class RiversMod : ModSystem
 
     public override void StartPre(ICoreAPI api)
     {
-        if (!Patched)
-        {
-            harmony = new Harmony("rivers");
-            harmony.PatchAll();
-            Patched = true;
-            patchedLocal = true;
-        }
+        Patch();
 
         string cfgFileName = "rivers.json";
+
+#if DEBUG
+        api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
+        return;
+#else
         try
         {
             RiverConfig fromDisk;
-            if ((fromDisk = api.LoadModConfig<RiverConfig>(cfgFileName)) == null || devEnvironment)
+            if ((fromDisk = api.LoadModConfig<RiverConfig>(cfgFileName)) == null)
             {
                 api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
             }
@@ -198,19 +98,33 @@ public class RiversMod : ModSystem
         {
             api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
         }
+#endif
     }
 
     public override void Dispose()
     {
-        ChunkTesselatorManagerPatch.BottomChunk = null;
-        BlockLayersPatches.Distances = null;
-        if (patchedLocal)
-        {
-            harmony.UnpatchAll("rivers");
-            Patched = false;
-            patchedLocal = false;
-        }
-        SeaPatch.Multiplier = 0;
+        // Re-initialize values.
+        ChunkTesselatorManagerPatch.BottomChunk = null!;
+        BlockLayersPatches.Distances = null!;
+        ZoomPatch.Multiplier = 0;
+
+        Unpatch();
+    }
+
+    public static void Patch()
+    {
+        if (Harmony != null) return;
+
+        Harmony = new Harmony("rivers");
+        Harmony.PatchAll();
+    }
+
+    public static void Unpatch()
+    {
+        if (Harmony == null) return;
+
+        Harmony.UnpatchAll("rivers");
+        Harmony = null;
     }
 }
 
@@ -263,24 +177,24 @@ public class RiverDebugCommand : ServerChatCommand
     {
         try
         {
-            WaypointMapLayer wp = sapi.ModLoader.GetModSystem<WorldMapManager>().MapLayers.FirstOrDefault((MapLayer ml) => ml is WaypointMapLayer) as WaypointMapLayer;
+            if (sapi.ModLoader.GetModSystem<WorldMapManager>().MapLayers.FirstOrDefault((MapLayer ml) => ml is WaypointMapLayer) is not WaypointMapLayer wp) return;
 
             int worldX = (int)player.Entity.Pos.X;
             int worldZ = (int)player.Entity.Pos.Z;
             int chunkX = worldX / 32;
             int chunkZ = worldZ / 32;
 
-            int chunksInPlate = RiverConfig.Loaded.zonesInPlate * RiverConfig.Loaded.zoneSize / 32;
+            int chunksInPlate = RiverConfig.Loaded.zonesInRegion * RiverConfig.Loaded.zoneSize / 32;
 
             int plateX = chunkX / chunksInPlate;
             int plateZ = chunkZ / chunksInPlate;
 
-            TectonicPlate plate = ObjectCacheUtil.GetOrCreate(sapi, plateX.ToString() + "+" + plateZ.ToString(), () =>
+            RiverRegion plate = ObjectCacheUtil.GetOrCreate(sapi, $"{plateX}-{plateZ}", () =>
             {
-                return new TectonicPlate(sapi, plateX, plateZ);
+                return new RiverRegion(sapi, plateX, plateZ);
             });
 
-            Vec2d plateStart = plate.globalPlateStart;
+            Vector2d plateStart = plate.GlobalRegionStart;
 
             if (args[0] == "starts")
             {
@@ -311,7 +225,7 @@ public class RiverDebugCommand : ServerChatCommand
 
                     foreach (RiverNode node in river.nodes)
                     {
-                        AddWaypoint(wp, "x", new Vec3d(node.startPos.X + plateStart.X, 0, node.startPos.Y + plateStart.Y), player.PlayerUID, r, g, b, node.startSize.ToString(), false);
+                        AddWaypoint(wp, "x", new Vec3d(node.startPos.X + plateStart.X, 0, node.startPos.Y + plateStart.Y), player.PlayerUID, r, g, b, "River " + node.startSize.ToString(), false);
                     }
                 }
 
@@ -320,15 +234,15 @@ public class RiverDebugCommand : ServerChatCommand
 
             if (args[0] == "land")
             {
-                foreach (TectonicZone zone in plate.zones)
+                foreach (RiverZone zone in plate.zones)
                 {
-                    if (zone.ocean)
+                    if (zone.oceanZone)
                     {
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 0, 100, 255, "Ocean", false);
+                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 0, 100, 255, "River Ocean", false);
                     }
                     else
                     {
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 255, 150, 150, "Land", false);
+                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 255, 150, 150, "River Land", false);
                     }
                 }
 
@@ -339,12 +253,12 @@ public class RiverDebugCommand : ServerChatCommand
             {
                 int oceanTiles = 0;
 
-                foreach (TectonicZone zone in plate.zones)
+                foreach (RiverZone zone in plate.zones)
                 {
-                    if (zone.ocean)
+                    if (zone.oceanZone)
                     {
                         oceanTiles++;
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 0, 100, 255, "Ocean", false);
+                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 0, 100, 255, "River Ocean", false);
                     }
                 }
 
@@ -357,12 +271,12 @@ public class RiverDebugCommand : ServerChatCommand
             {
                 int coastalTiles = 0;
 
-                foreach (TectonicZone zone in plate.zones)
+                foreach (RiverZone zone in plate.zones)
                 {
-                    if (zone.coastal)
+                    if (zone.coastalZone)
                     {
                         coastalTiles++;
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 255, 100, 255, "Ocean", false);
+                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 255, 100, 255, "River Ocean", false);
                     }
                 }
 
@@ -374,6 +288,9 @@ public class RiverDebugCommand : ServerChatCommand
             if (args[0] == "clear")
             {
                 wp.Waypoints.Clear();
+
+                wp.Waypoints.RemoveAll(wp => wp.Title.StartsWith("River"));
+
 
                 wp.CallMethod("ResendWaypoints", player);
             }
@@ -389,11 +306,11 @@ public class RiverDebugCommand : ServerChatCommand
     public int biggestX = 0;
     public int biggestZ = 0;
 
-    public void MapRiver(WaypointMapLayer wp, RiverSegment segment, int r, int g, int b, IPlayer player, Vec2d plateStart)
+    public void MapRiver(WaypointMapLayer wp, RiverSegment segment, int r, int g, int b, IPlayer player, Vector2d plateStart)
     {
-        AddWaypoint(wp, "x", new Vec3d(segment.startPos.X + plateStart.X, 0, segment.startPos.Y + plateStart.Y), player.PlayerUID, r, g, b, $"{segment.riverNode.startSize}");
+        AddWaypoint(wp, "x", new Vec3d(segment.startPos.X + plateStart.X, 0, segment.startPos.Y + plateStart.Y), player.PlayerUID, r, g, b, $"River {segment.riverNode?.startSize}");
 
-        if (segment.riverNode.startSize > biggestRiver)
+        if (segment.riverNode?.startSize > biggestRiver)
         {
             biggestRiver = (int)segment.riverNode.startSize;
             biggestX = (int)(segment.startPos.X + plateStart.X);
