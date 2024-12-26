@@ -6,9 +6,12 @@ using Vintagestory.ServerMods;
 
 namespace Rivers;
 
+/// <summary>
+/// If a gravity block generated with nothing below it, place stone below it.
+/// </summary>
 public class GravityBlocksPass : ModStdWorldGen
 {
-    public ICoreServerAPI sapi;
+    public ICoreServerAPI sapi = null!;
 
     public HashSet<int> unstableBlockIds = new();
 
@@ -56,11 +59,11 @@ public class GravityBlocksPass : ModStdWorldGen
         {
             for (int localX = 0; localX < 32; localX++)
             {
-                int surfaceLevel = terrainHeightMap[RiverMath.ChunkIndex2d(localX, localZ)];
+                int surfaceLevel = terrainHeightMap[ChunkMath.ChunkIndex2d(localX, localZ)];
 
                 int chunkY = surfaceLevel / 32;
 
-                if (unstableBlockIds.Contains(chunks[chunkY].Data[RiverMath.ChunkIndex3d(localX, surfaceLevel % 32, localZ)]))
+                if (unstableBlockIds.Contains(chunks[chunkY].Data[ChunkMath.ChunkIndex3d(localX, surfaceLevel % 32, localZ)]))
                 {
                     bool illegal = false;
 
@@ -72,7 +75,7 @@ public class GravityBlocksPass : ModStdWorldGen
                     {
                         newChunkY = (surfaceLevel - index) / 32;
 
-                        int id = chunks[newChunkY].Data[RiverMath.ChunkIndex3d(localX, (surfaceLevel - index) % 32, localZ)];
+                        int id = chunks[newChunkY].Data[ChunkMath.ChunkIndex3d(localX, (surfaceLevel - index) % 32, localZ)];
 
                         if (unstableBlockIds.Contains(id))
                         {
@@ -88,10 +91,9 @@ public class GravityBlocksPass : ModStdWorldGen
                     // 99% of the time not called.
                     if (illegal)
                     {
-
                         // Set the air block below to rock.
                         newChunkY = (surfaceLevel - index) / 32;
-                        chunks[newChunkY].Data[RiverMath.ChunkIndex3d(localX, (surfaceLevel - index) % 32, localZ)] = topRockIdMap[RiverMath.ChunkIndex2d(localX, localZ)];
+                        chunks[newChunkY].Data[ChunkMath.ChunkIndex3d(localX, (surfaceLevel - index) % 32, localZ)] = topRockIdMap[ChunkMath.ChunkIndex2d(localX, localZ)];
                     }
                 }
             }

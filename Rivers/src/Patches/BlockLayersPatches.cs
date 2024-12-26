@@ -10,7 +10,7 @@ namespace Rivers;
 
 public class BlockLayersPatches
 {
-    public static ushort[] Distances { get; set; }
+    public static ushort[]? Distances { get; set; }
 
     /// <summary>
     /// Before the XZ loop, retrieve arrays.
@@ -27,8 +27,8 @@ public class BlockLayersPatches
             List<CodeInstruction> code = new(instructions);
 
             int insertionIndex = -1;
-            object xOperand = null;
-            object zOperand = null;
+            object xOperand = null!;
+            object zOperand = null!;
 
             for (int i = 4; i < code.Count - 4; i++)
             {
@@ -55,7 +55,7 @@ public class BlockLayersPatches
             //Second part
 
             insertionIndex = -1;
-            object seaLevelOperand = null;
+            object seaLevelOperand = null!;
 
             for (int i = 4; i < code.Count - 4; i++)
             {
@@ -107,6 +107,8 @@ public class BlockLayersPatches
     // Disable Y level boost in dry areas.
     public static float IsRiver(int localX, int localZ)
     {
+        if (Distances == null) return 1;
+
         ushort distance = Distances[(localZ * 32) + localX];
 
         if (distance == 0) return 0;
