@@ -31,7 +31,7 @@ public class EntityBehaviorPhysicsPatch
                     float riverSpeed = RiversMod.RiverSpeed;
                     float density = 300f / GameMath.Clamp(entity.MaterialDensity, 750f, 2500f) * (60 * dt); // Calculate density.
                     if (controls.ShiftKey) density /= 2;
-                    pos.Motion.Add(flowVectors[ChunkMath.ChunkIndex2d((int)pos.X % 32, (int)pos.Z % 32) * 2] * 0.0025 * density * riverSpeed, 0, flowVectors[ChunkMath.ChunkIndex2d((int)pos.X % 32, (int)pos.Z % 32) * 2 + 1] * 0.0025 * density * riverSpeed);
+                    pos.Motion.Add(flowVectors[ChunkMath.ChunkIndex2d((int)pos.X % 32, (int)pos.Z % 32)] * 0.0025 * density * riverSpeed, 0, flowVectors[ChunkMath.ChunkIndex2d((int)pos.X % 32, (int)pos.Z % 32) + 1024] * 0.0025 * density * riverSpeed);
                 }
             }
 
@@ -55,7 +55,7 @@ public class EntityBehaviorPhysicsPatch
 
                 if (flowVectors != null)
                 {
-                    __instance.SidedPos.Motion.Add(flowVectors[ChunkMath.ChunkIndex2d((int)__instance.Pos.X % 32, (int)__instance.Pos.Z % 32) * 2] * 0.01 * riverSpeed * 2, 0, flowVectors[ChunkMath.ChunkIndex2d((int)__instance.Pos.X % 32, (int)__instance.Pos.Z % 32) * 2 + 1] * 0.01 * riverSpeed * 2);
+                    __instance.SidedPos.Motion.Add(flowVectors[ChunkMath.ChunkIndex2d((int)__instance.Pos.X % 32, (int)__instance.Pos.Z % 32)] * 0.01 * riverSpeed * 2, 0, flowVectors[ChunkMath.ChunkIndex2d((int)__instance.Pos.X % 32, (int)__instance.Pos.Z % 32) + 1024] * 0.01 * riverSpeed * 2);
                 }
             }
         }
