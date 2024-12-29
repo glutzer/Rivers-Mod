@@ -381,8 +381,8 @@ public class NewGenTerra : ModStdWorldGen
             // Determine if water is flowing there and add it.
             if (sample.flowVectorX > -100)
             {
-                flowVectors[chunkIndex2d * 2] = sample.flowVectorX;
-                flowVectors[(chunkIndex2d * 2) + 1] = sample.flowVectorZ;
+                flowVectors[chunkIndex2d] = sample.flowVectorX;
+                flowVectors[chunkIndex2d + 1024] = sample.flowVectorZ;
                 riverBank = true;
             }
 
