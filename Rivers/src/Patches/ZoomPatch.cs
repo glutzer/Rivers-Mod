@@ -10,6 +10,7 @@ public class ZoomPatch
     // Zoom for map.
     [HarmonyPatch(typeof(GuiElementMap))]
     [HarmonyPatch("ZoomAdd")]
+    [HarmonyPatchCategory("core")]
     public static class GuiElementMapPrefix
     {
         [HarmonyPrefix]

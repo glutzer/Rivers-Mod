@@ -33,6 +33,7 @@ public class LiquidTesselatorPatch
 
     [HarmonyPatch(typeof(LiquidTesselator))]
     [HarmonyPatch("Tesselate")]
+    [HarmonyPatchCategory("flow")]
     public static class LiquidTesselateTranspiler
     {
         [HarmonyTranspiler]

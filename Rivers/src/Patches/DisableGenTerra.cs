@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Vintagestory.API.Server;
@@ -13,6 +12,7 @@ public class DisableGenTerra
 {
     [HarmonyPatch(typeof(GenTerra))]
     [HarmonyPatch("StartServerSide")]
+    [HarmonyPatchCategory("core")]
     public static class GenTerraDisable
     {
         [HarmonyPrefix]
@@ -25,6 +25,7 @@ public class DisableGenTerra
 
     [HarmonyPatch(typeof(GenTerra))]
     [HarmonyPatch("initWorldGen")]
+    [HarmonyPatchCategory("core")]
     public static class RegenChunksDisable
     {
         [HarmonyPrefix]
@@ -43,6 +44,7 @@ public class DisableGenTerra
     /// Changes the landform reload to only reload IF the landforms have not been loaded yet.
     /// </summary>
     [HarmonyPatch]
+    [HarmonyPatchCategory("core")]
     public static class BrokenReload
     {
         public static MethodBase TargetMethod()
@@ -89,6 +91,7 @@ public class DisableGenTerra
     }
 
     [HarmonyPatch]
+    [HarmonyPatchCategory("core")]
     public static class ScalePatch
     {
         public static MethodBase TargetMethod()
