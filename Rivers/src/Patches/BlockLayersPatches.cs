@@ -19,6 +19,7 @@ public class BlockLayersPatches
     /// </summary>
     [HarmonyPatch(typeof(GenBlockLayers))]
     [HarmonyPatch("OnChunkColumnGeneration")]
+    [HarmonyPatchCategory("core")]
     public static class OnChunkColumnGenerationTranspiler
     {
         [HarmonyTranspiler]
@@ -90,6 +91,7 @@ public class BlockLayersPatches
 
     [HarmonyPatch(typeof(GenBlockLayers))]
     [HarmonyPatch("OnChunkColumnGeneration")]
+    [HarmonyPatchCategory("core")]
     public static class OnChunkColumnGenerationPostfix
     {
         [HarmonyPostfix]

@@ -17,6 +17,7 @@ public class EntityBehaviorPhysicsPatch
     // Really laggy but if it's just controlled entities it's fine.
     [HarmonyPatch(typeof(PModuleInLiquid))]
     [HarmonyPatch("DoApply")]
+    [HarmonyPatchCategory("flow")]
     public static class DoApplyPrefix
     {
         public static bool Prefix(PModuleInLiquid __instance, float dt, Entity entity, EntityPos pos, EntityControls controls)
@@ -41,6 +42,7 @@ public class EntityBehaviorPhysicsPatch
 
     [HarmonyPatch(typeof(EntityBoat))]
     [HarmonyPatch("updateBoatAngleAndMotion")]
+    [HarmonyPatchCategory("flow")]
     public static class UpdateBoatAngleAndMotionPostfix
     {
         public static void Postfix(EntityBoat __instance)

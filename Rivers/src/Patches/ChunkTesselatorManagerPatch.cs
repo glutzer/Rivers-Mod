@@ -9,6 +9,7 @@ public class ChunkTesselatorManagerPatch
 {
     // Set this to use an extended version of the cache.
     [HarmonyPatch(typeof(ChunkTesselator), "Start")]
+    [HarmonyPatchCategory("flow")]
     public static class StartPrefix
     {
         [HarmonyPrefix]
@@ -23,6 +24,7 @@ public class ChunkTesselatorManagerPatch
 
     [HarmonyPatch(typeof(ChunkTesselatorManager))]
     [HarmonyPatch("TesselateChunk")]
+    [HarmonyPatchCategory("flow")]
     public static class TesselateChunkPrefix
     {
         [HarmonyPrefix]
@@ -35,6 +37,7 @@ public class ChunkTesselatorManagerPatch
 
     [HarmonyPatch(typeof(ChunkTesselatorManager))]
     [HarmonyPatch("TesselateChunk")]
+    [HarmonyPatchCategory("flow")]
     public static class TesselateChunkPostfix
     {
         [HarmonyPostfix]
@@ -46,6 +49,7 @@ public class ChunkTesselatorManagerPatch
 
     [HarmonyPatch(typeof(ChunkTesselatorManager))]
     [HarmonyPatch("TesselateChunk")]
+    [HarmonyPatchCategory("flow")]
     public static class TesselateChunkTranspiler
     {
         [HarmonyTranspiler]

@@ -74,13 +74,10 @@ public class RiversMod : ModSystem
 
     public override void StartPre(ICoreAPI api)
     {
-        Patch();
-
         string cfgFileName = "rivers.json";
 
 #if DEBUG
         api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
-        return;
 #else
         try
         {
@@ -99,6 +96,8 @@ public class RiversMod : ModSystem
             api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
         }
 #endif
+
+        Patch();
     }
 
     public override void Dispose()
@@ -116,7 +115,12 @@ public class RiversMod : ModSystem
         if (Harmony != null) return;
 
         Harmony = new Harmony("rivers");
-        Harmony.PatchAll();
+        Harmony.PatchCategory("core");
+
+        if (!RiverConfig.Loaded.disableFlow)
+        {
+            Harmony.PatchCategory("flow");
+        }
     }
 
     public static void Unpatch()
@@ -140,20 +144,31 @@ public class RiverZoomCommand : ClientChatCommand
 
     public RiverZoomCommand()
     {
-        Command = "riverzoom";
+        Command = "riverdebug";
         Description = "Zooms out";
-        Syntax = ".riverzoom";
+        Syntax = ".riverdebug";
     }
 
     public override void CallHandler(IPlayer player, int groupId, CmdArgs args)
     {
-        try
+        if (args[0] == "selectedblockid")
         {
-            Zoomed = !Zoomed;
-        }
-        catch
-        {
+            BlockSelection? currentSelection = player.CurrentBlockSelection;
+            if (currentSelection == null) return;
 
+            ((ICoreClientAPI)player.Entity.World.Api).ShowChatMessage(currentSelection.Block.Id.ToString() + " " + currentSelection.Block.Code);
+        }
+
+        if (args[0] == "zoom")
+        {
+            try
+            {
+                Zoomed = !Zoomed;
+            }
+            catch
+            {
+
+            }
         }
     }
 }

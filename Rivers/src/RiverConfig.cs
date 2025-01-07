@@ -4,6 +4,8 @@ public class RiverConfig
 {
     public static RiverConfig Loaded { get; set; } = new RiverConfig();
 
+    public bool disableFlow = false;
+
     public int minForkAngle = 10; // When a river forks, each segment will go at this angle minimum.
     public int forkVariation = 35; // How much to add to the minimum fork angle.
     public int normalAngle = 20; // When adding single node change from 0 to this angle in direction left or right.
