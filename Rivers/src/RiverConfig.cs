@@ -24,7 +24,7 @@ public class RiverConfig
     public int riverPaddingBlocks = 128;
 
     // How much to multiply the land scale by, to make the continents larger.
-    public float landScaleMultiplier = 2;
+    public float landScaleMultiplier = 1;
 
     // Minimum and maximum size of rivers, in width.
     public float minSize = 14;
