@@ -698,7 +698,7 @@ public class NewGenTerra : ModStdWorldGen
             chunks[0].SetModdata("flowVectors", flowVectors);
         }
 
-        // Atleast one part of the chunk is within valley range, set river distance.3
+        // Atleast one part of the chunk is within valley range, set river distance.
         if (riverInRange)
         {
             chunks[0].MapChunk.SetModdata("riverDistance", riverDistance);
