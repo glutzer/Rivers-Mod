@@ -37,24 +37,7 @@ public class FeatureTinyBoulder : FeatureRiverBoulder
                 if (y > TerraGenConfig.seaLevel - 3 && !dry)
                 {
                     tempPos.Y++;
-                    if (blockAccessor.GetBlock(tempPos).Replaceable > 5000) blockAccessor.SetBlock(decor.Id, tempPos);
-
-                    // Remove floating moss.
-                    /*
-                    tempPos.Y++;
-                    if (blockAccessor.GetBlock(tempPos).Id == decor.Id) blockAccessor.SetBlock(0, tempPos);
-                    */
                 }
-
-                /*
-                if (y > TerraGenConfig.seaLevel - 2)
-                {
-                    foreach (BlockFacing face in BlockFacing.ALLFACES)
-                    {
-                        blockAccessor.SetDecor(decor, tempPos, face);
-                    }
-                }
-                */
             }
         });
     }

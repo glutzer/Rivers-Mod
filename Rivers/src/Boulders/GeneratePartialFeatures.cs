@@ -14,7 +14,7 @@ public class GeneratePartialFeatures : WorldGenPartial
         return 0.15;
     }
 
-    public IWorldGenBlockAccessor blockAccessor;
+    public IWorldGenBlockAccessor blockAccessor = null!;
 
     public List<PartialFeature> features = new();
 
@@ -45,12 +45,6 @@ public class GeneratePartialFeatures : WorldGenPartial
         // Load config into the system base.
         LoadGlobalConfig(sapi);
 
-        FeatureFallenLog log = new(sapi)
-        {
-            tries = 1,
-            chance = 0.2f
-        };
-
         FeatureRiverBoulder riverBoulder = new(sapi)
         {
             hSize = 5,
@@ -69,36 +63,8 @@ public class GeneratePartialFeatures : WorldGenPartial
             noise = new Noise(0, 0.05f, 2)
         };
 
-        /*
-        AlluvialFeature sand = new(sapi, "waterwheels:alluvialblock-blueclay-full")
-        {
-            hSize = 2,
-            hSizeVariance = 5,
-            tries = 3,
-            chance = 0.1f
-        };
-        */
-
-        /*
-        SurfaceAlluvialFeature sand = new(sapi, "sludgygravel")
-        {
-            hSize = 2,
-            hSizeVariance = 5,
-            tries = 5,
-            chance = 0.2f
-        };
-        */
-
-        /*
-        if (RiverConfig.Loaded.riverDeposits)
-        {
-            features.Add(sand);
-        }
-        */
-
         if (RiverConfig.Loaded.boulders)
         {
-            features.Add(log);
             features.Add(riverBoulder);
             features.Add(tinyBoulder);
         }
@@ -112,9 +78,9 @@ public class GeneratePartialFeatures : WorldGenPartial
 
         ushort[] ownHeightMap = chunks[0].MapChunk.WorldGenTerrainHeightMap;
         ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
-        ushort[] riverMap = mapChunk.GetModdata<ushort[]>("riverDistance");
+        ushort[] riverDistanceMap = mapChunk.GetModdata<ushort[]>("riverDistance");
 
-        if (riverMap == null) return;
+        if (riverDistanceMap == null) return;
 
         int startX = generatingChunkX * chunkSize;
         int startZ = generatingChunkZ * chunkSize;
@@ -147,7 +113,7 @@ public class GeneratePartialFeatures : WorldGenPartial
                 pos.Y = heightMap[(randZ * chunkSize) + randX] + 1;
                 pos.Z = startZ + randZ;
 
-                if (!feature.CanGenerate(randX, pos.Y, randZ, riverMap[(randZ * 32) + randX], dry)) continue;
+                if (!feature.CanGenerate(randX, pos.Y, randZ, riverDistanceMap[(randZ * 32) + randX], dry)) continue;
 
                 int rockId = mapChunk.TopRockIdMap[(randZ * chunkSize) + randX];
 
