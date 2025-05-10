@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
@@ -57,10 +58,15 @@ public class GravelGen : ModStdWorldGen
             // No gravel for kimberlite/phyllite.
             int gravelId = sapi.World.GetBlock(new AssetLocation("gravel-" + stratum.BlockCode.ToString().Split('-')[1]))?.BlockId ?? stratumId;
 
+            if (gravelId == 0)
+            {
+                Console.WriteLine($"GravelGen: No gravel found for {stratum.BlockCode} ({stratumId}).");
+            }
+
             gravelMappings.Add(stratumId, gravelId);
         }
 
-        gravelMappings.Add(0, 0);
+        gravelMappings[0] = 0; // There is an error here that this has already been added.
 
         baseSeaLevel = TerraGenConfig.seaLevel - 1;
     }

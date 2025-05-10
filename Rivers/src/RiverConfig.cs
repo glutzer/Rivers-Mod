@@ -94,4 +94,7 @@ public class RiverConfig
 
     // Gravel on sides of river.
     public bool gravelBeaches = true;
+
+    // Better valleys.
+    public bool valleysV2 = false;
 }

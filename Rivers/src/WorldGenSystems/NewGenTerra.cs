@@ -36,18 +36,11 @@ public struct ThreadLocalTempData
     public float[] landformWeights;
 }
 
+
+
 public class NewGenTerra : ModStdWorldGen
 {
     public ICoreServerAPI sapi = null!;
-    public override bool ShouldLoad(EnumAppSide side)
-    {
-        return side == EnumAppSide.Server;
-    }
-
-    public override double ExecuteOrder()
-    {
-        return 0;
-    }
 
     // Cache of landforms, cleared on init (why?) and when /wgen regen command reloads all the generators.
     public Dictionary<int, LerpedWeightedIndex2DMap> landformMapCache = new();
@@ -268,61 +261,21 @@ public class NewGenTerra : ModStdWorldGen
 
         RiverConfig riverConfig = RiverConfig.Loaded;
 
-        // Get climate data.
-        int regionChunkSize = sapi.WorldManager.RegionSize / chunkSize;
-        int rlX = chunkX % regionChunkSize;
-        int rlZ = chunkZ % regionChunkSize;
+        IntMapData climateMapData = mapChunk.MapRegion.ClimateMap.GetValues(chunkX, chunkZ);
+        IntMapData oceanMapData = mapChunk.MapRegion.OceanMap.GetValues(chunkX, chunkZ);
+        IntMapData upheavalMapData = mapChunk.MapRegion.UpheavelMap.GetValues(chunkX, chunkZ);
 
-        IntDataMap2D climateMap = chunks[0].MapChunk.MapRegion.ClimateMap;
-        float cFac = (float)climateMap.InnerSize / regionChunkSize;
-        int climateUpLeft = climateMap.GetUnpaddedInt((int)(rlX * cFac), (int)(rlZ * cFac));
-        int climateUpRight = climateMap.GetUnpaddedInt((int)((rlX * cFac) + cFac), (int)(rlZ * cFac));
-        int climateBotLeft = climateMap.GetUnpaddedInt((int)(rlX * cFac), (int)((rlZ * cFac) + cFac));
-        int climateBotRight = climateMap.GetUnpaddedInt((int)((rlX * cFac) + cFac), (int)((rlZ * cFac) + cFac));
-
-        // Get ocean data.
-        IntDataMap2D oceanMap = chunks[0].MapChunk.MapRegion.OceanMap;
-        int oceanUpLeft = 0;
-        int oceanUpRight = 0;
-        int oceanBotLeft = 0;
-        int oceanBotRight = 0;
-        if (oceanMap != null && oceanMap.Data.Length > 0)
-        {
-            float oFac = (float)oceanMap.InnerSize / regionChunkSize;
-            oceanUpLeft = oceanMap.GetUnpaddedInt((int)(rlX * oFac), (int)(rlZ * oFac));
-            oceanUpRight = oceanMap.GetUnpaddedInt((int)((rlX * oFac) + oFac), (int)(rlZ * oFac));
-            oceanBotLeft = oceanMap.GetUnpaddedInt((int)(rlX * oFac), (int)((rlZ * oFac) + oFac));
-            oceanBotRight = oceanMap.GetUnpaddedInt((int)((rlX * oFac) + oFac), (int)((rlZ * oFac) + oFac));
-        }
-
-        // Get upheaval data.
-        IntDataMap2D upheavalMap = chunks[0].MapChunk.MapRegion.UpheavelMap;
-        int upheavalMapUpLeft = 0;
-        int upheavalMapUpRight = 0;
-        int upheavalMapBotLeft = 0;
-        int upheavalMapBotRight = 0;
-        if (upheavalMap != null)
-        {
-            float uFac = (float)upheavalMap.InnerSize / regionChunkSize;
-            upheavalMapUpLeft = upheavalMap.GetUnpaddedInt((int)(rlX * uFac), (int)(rlZ * uFac));
-            upheavalMapUpRight = upheavalMap.GetUnpaddedInt((int)((rlX * uFac) + uFac), (int)(rlZ * uFac));
-            upheavalMapBotLeft = upheavalMap.GetUnpaddedInt((int)(rlX * uFac), (int)((rlZ * uFac) + uFac));
-            upheavalMapBotRight = upheavalMap.GetUnpaddedInt((int)((rlX * uFac) + uFac), (int)((rlZ * uFac) + uFac));
-        }
-
-        float oceanicityFac = sapi.WorldManager.MapSizeY / 256 * 0.33333f; // At a map height of 255, submerge land by up to 85 blocks.
+        float oceanicityFac = sapi.WorldManager.MapSizeY / 256 * (1 / 3f); // At a map height of 255, submerge land by up to 85 blocks.
 
         IntDataMap2D landformMap = mapChunk.MapRegion.LandformMap;
-        float chunkPixelSize = landformMap.InnerSize / regionChunkSize;
+        float chunkPixelSize = landformMap.InnerSize / RiverGlobals.ChunksPerRegion;
 
-        // Start coordinates for the chunk in the region map.
-        float baseX = chunkX % regionChunkSize * chunkPixelSize;
-        float baseZ = chunkZ % regionChunkSize * chunkPixelSize;
-
-        LerpedWeightedIndex2DMap landLerpMap = GetOrLoadCachedLandformMap(chunks[0].MapChunk, chunkX / regionChunkSize, chunkZ / regionChunkSize);
+        LerpedWeightedIndex2DMap landLerpMap = GetOrLoadCachedLandformMap(chunks[0].MapChunk, chunkX / RiverGlobals.ChunksPerRegion, chunkZ / RiverGlobals.ChunksPerRegion);
 
         // Terrain octaves.
         float[] landformWeights = tempDataThreadLocal.Value.landformWeights;
+        float baseX = chunkX % RiverGlobals.ChunksPerRegion * chunkPixelSize;
+        float baseZ = chunkZ % RiverGlobals.ChunksPerRegion * chunkPixelSize;
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX, baseZ, landformWeights), out double[] octNoiseX0, out double[] octThX0);
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX + chunkPixelSize, baseZ, landformWeights), out double[] octNoiseX1, out double[] octThX1);
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX, baseZ + chunkPixelSize, landformWeights), out double[] octNoiseX2, out double[] octThX2);
@@ -338,7 +291,8 @@ public class NewGenTerra : ModStdWorldGen
         int taperThreshold = (int)(mapSizeY * 0.9f);
         double geoUpheavalAmplitude = 255;
 
-        const float chunkBlockDelta = 1.0f / chunkSize;
+        float chunkBlockDelta = 1f / 32;
+
         float chunkPixelBlockStep = chunkPixelSize * chunkBlockDelta;
         double verticalNoiseRelativeFrequency = 0.5 / TerraGenConfig.terrainNoiseVerticalScale;
         for (int y = 0; y < layerFullySolid.Length; y++) layerFullySolid[y] = true; // Fill with true; later if any block in the layer is non-solid we will set it to false.
@@ -470,12 +424,13 @@ public class NewGenTerra : ModStdWorldGen
             Vector2d distTerrain = ApplyIsotropicDistortionThreshold(dist * terrainDistortionMultiplier, terrainDistortionThreshold, terrainDistortionMultiplier * maxDistortionAmount);
 
             // Get y distortion from oceanicity and upheaval.
-            float upheavalStrength = GameMath.BiLerp(upheavalMapUpLeft, upheavalMapUpRight, upheavalMapBotLeft, upheavalMapBotRight, localX * chunkBlockDelta, localZ * chunkBlockDelta);
+            float upheavalStrength = upheavalMapData.LerpForChunk(chunkX, chunkZ);
 
             // Weight upheaval to river.
             upheavalStrength *= riverLerp;
 
-            float oceanicity = GameMath.BiLerp(oceanUpLeft, oceanUpRight, oceanBotLeft, oceanBotRight, localX * chunkBlockDelta, localZ * chunkBlockDelta) * oceanicityFac;
+            float oceanicity = oceanMapData.LerpForChunk(chunkX, chunkZ) * oceanicityFac;
+
             Vector2d distGeo = ApplyIsotropicDistortionThreshold(dist * geoDistortionMultiplier, geoDistortionThreshold, geoDistortionMultiplier * maxDistortionAmount);
 
             float distY = oceanicity + ComputeOceanAndUpheavalDistY(upheavalStrength, worldX, worldZ, distGeo);
@@ -599,7 +554,7 @@ public class NewGenTerra : ModStdWorldGen
 
                 if (yBase < seaLevel && waterId != GlobalConfig.saltWaterBlockId && !columnResult.columnBlockSolidities[seaLevel - 1]) // Should surface water be lake ice? Relevant only for fresh water and only if this particular XZ column has a non-solid block at sea-level.
                 {
-                    int temp = (GameMath.BiLerpRgbColor(localX * chunkBlockDelta, localZ * chunkBlockDelta, climateUpLeft, climateUpRight, climateBotLeft, climateBotRight) >> 16) & 0xFF;
+                    int temp = (GameMath.BiLerpRgbColor(localX * chunkBlockDelta, localZ * chunkBlockDelta, climateMapData.UpperLeft, climateMapData.UpperRight, climateMapData.BottomLeft, climateMapData.BottomRight) >> 16) & 0xFF;
                     float distort = (float)distort2dx.Noise((chunkX * chunkSize) + localX, worldZ) / 20f;
                     float tempF = Climate.GetScaledAdjustedTemperatureFloat(temp, 0) + distort;
                     if (tempF < TerraGenConfig.WaterFreezingTempOnGen) surfaceWaterId = GlobalConfig.lakeIceBlockId;
@@ -838,5 +793,15 @@ public class NewGenTerra : ModStdWorldGen
             dist *= forceDown;
         }
         return dist;
+    }
+
+    public override bool ShouldLoad(EnumAppSide side)
+    {
+        return side == EnumAppSide.Server;
+    }
+
+    public override double ExecuteOrder()
+    {
+        return 0;
     }
 }
