@@ -20,36 +20,23 @@ public class RiverMath
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double Map(double value, double fromMin, double fromMax, double toMin, double toMax)
     {
-        return (value - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
+        return ((value - fromMin) / (fromMax - fromMin) * (toMax - toMin)) + toMin;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double DistanceToLine(Vector2d point, Vector2d start, Vector2d end)
     {
-        if (((start.X - end.X) * (point.X - end.X)) + ((start.Y - end.Y) * (point.Y - end.Y)) <= 0)
-        {
-            return Math.Sqrt(((point.X - end.X) * (point.X - end.X)) + ((point.Y - end.Y) * (point.Y - end.Y)));
-        }
-
-        if (((end.X - start.X) * (point.X - start.X)) + ((end.Y - start.Y) * (point.Y - start.Y)) <= 0)
-        {
-            return Math.Sqrt(((point.X - start.X) * (point.X - start.X)) + ((point.Y - start.Y) * (point.Y - start.Y)));
-        }
-
-        return Math.Abs(((end.Y - start.Y) * point.X) - ((end.X - start.X) * point.Y) + (end.X * start.Y) - (end.Y * start.X)) / Math.Sqrt(((start.Y - end.Y) * (start.Y - end.Y)) + ((start.X - end.X) * (start.X - end.X)));
+        return ((start.X - end.X) * (point.X - end.X)) + ((start.Y - end.Y) * (point.Y - end.Y)) <= 0
+            ? Math.Sqrt(((point.X - end.X) * (point.X - end.X)) + ((point.Y - end.Y) * (point.Y - end.Y)))
+            : ((end.X - start.X) * (point.X - start.X)) + ((end.Y - start.Y) * (point.Y - start.Y)) <= 0
+            ? Math.Sqrt(((point.X - start.X) * (point.X - start.X)) + ((point.Y - start.Y) * (point.Y - start.Y)))
+            : Math.Abs(((end.Y - start.Y) * point.X) - ((end.X - start.X) * point.Y) + (end.X * start.Y) - (end.Y * start.X)) / Math.Sqrt(((start.Y - end.Y) * (start.Y - end.Y)) + ((start.X - end.X) * (start.X - end.X)));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double InverseLerp(double value, double min, double max)
     {
-        if (Math.Abs(max - min) < double.Epsilon)
-        {
-            return 0f;
-        }
-        else
-        {
-            return (value - min) / (max - min);
-        }
+        return Math.Abs(max - min) < double.Epsilon ? (double)0f : (value - min) / (max - min);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

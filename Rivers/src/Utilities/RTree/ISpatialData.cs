@@ -2,5 +2,5 @@
 
 public interface ISpatialData
 {
-    public Envelope Envelope { get; }
+    Envelope Envelope { get; }
 }

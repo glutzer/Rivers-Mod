@@ -1,6 +1,4 @@
-﻿using Vintagestory.API.MathTools;
-
-namespace Rivers;
+﻿namespace Rivers;
 
 public class RiverGlobals
 {

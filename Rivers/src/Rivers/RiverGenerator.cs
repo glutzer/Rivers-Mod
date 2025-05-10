@@ -68,14 +68,9 @@ public class RiverGenerator
             }
             else
             {
-                if (segment.parent == null)
-                {
-                    riverSample = SampleSelf(segment, riverSample, point, riverSize, ref closestLine);
-                }
-                else
-                {
-                    riverSample = SampleConnector(segment, segment.parent, segmentProjection, riverSample, point, riverSize, ref closestLine);
-                }
+                riverSample = segment.parent == null
+                    ? SampleSelf(segment, riverSample, point, riverSize, ref closestLine)
+                    : SampleConnector(segment, segment.parent, segmentProjection, riverSample, point, riverSize, ref closestLine);
             }
         }
 

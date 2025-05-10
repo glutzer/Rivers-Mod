@@ -4,7 +4,7 @@ namespace Rivers;
 
 public interface ISpatialIndex<out T>
 {
-    public IReadOnlyList<T> Search();
+    IReadOnlyList<T> Search();
 
-    public IReadOnlyList<T> Search(in Envelope boundingBox);
+    IReadOnlyList<T> Search(in Envelope boundingBox);
 }

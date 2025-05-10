@@ -1,13 +1,13 @@
 {
-    "type": "code",
-    "modid": "rivers",
-    "name": "Rivers",
-    "authors": [
-        "sneeze"
-    ],
-    "description": "Standalone version of rivers.",
-    "version": "4.3.0",
-    "dependencies": {
-        "game": ""
-    }
+  "type": "code",
+  "modid": "rivers",
+  "name": "Rivers",
+  "authors": [
+    "sneeze"
+  ],
+  "description": "Standalone version of rivers.",
+  "version": "4.4.0",
+  "dependencies": {
+    "game": ""
+  }
 }

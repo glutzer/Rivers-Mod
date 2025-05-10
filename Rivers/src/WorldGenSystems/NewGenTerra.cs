@@ -36,8 +36,6 @@ public struct ThreadLocalTempData
     public float[] landformWeights;
 }
 
-
-
 public class NewGenTerra : ModStdWorldGen
 {
     public ICoreServerAPI sapi = null!;
@@ -50,7 +48,7 @@ public class NewGenTerra : ModStdWorldGen
     public Noise valleyNoise = new(0, 0.0008f, 2);
     public Noise floorNoise = new(0, 0.0008f, 1);
 
-    const int chunkSize = 32;
+    private const int chunkSize = 32;
     public const double terrainDistortionMultiplier = 4;
     public const double terrainDistortionThreshold = 40;
     public const double geoDistortionMultiplier = 10;
@@ -261,15 +259,15 @@ public class NewGenTerra : ModStdWorldGen
 
         RiverConfig riverConfig = RiverConfig.Loaded;
 
-        IntMapData climateMapData = mapChunk.MapRegion.ClimateMap.GetValues(chunkX, chunkZ);
-        IntMapData oceanMapData = mapChunk.MapRegion.OceanMap.GetValues(chunkX, chunkZ);
-        IntMapData upheavalMapData = mapChunk.MapRegion.UpheavelMap.GetValues(chunkX, chunkZ);
+        IntMapData climateMapData = mapChunk.MapRegion.ClimateMap?.GetValues(chunkX, chunkZ) ?? default;
+        IntMapData oceanMapData = mapChunk.MapRegion.OceanMap?.GetValues(chunkX, chunkZ) ?? default;
+        IntMapData upheavalMapData = mapChunk.MapRegion.UpheavelMap?.GetValues(chunkX, chunkZ) ?? default;
 
-        float oceanicityFac = sapi.WorldManager.MapSizeY / 256 * (1 / 3f); // At a map height of 255, submerge land by up to 85 blocks.
+        // At a map height of 255, submerge land by up to 85 blocks.
+        float oceanicityFac = sapi.WorldManager.MapSizeY / 256 * 0.33333f;
 
         IntDataMap2D landformMap = mapChunk.MapRegion.LandformMap;
         float chunkPixelSize = landformMap.InnerSize / RiverGlobals.ChunksPerRegion;
-
         LerpedWeightedIndex2DMap landLerpMap = GetOrLoadCachedLandformMap(chunks[0].MapChunk, chunkX / RiverGlobals.ChunksPerRegion, chunkZ / RiverGlobals.ChunksPerRegion);
 
         // Terrain octaves.
@@ -424,12 +422,12 @@ public class NewGenTerra : ModStdWorldGen
             Vector2d distTerrain = ApplyIsotropicDistortionThreshold(dist * terrainDistortionMultiplier, terrainDistortionThreshold, terrainDistortionMultiplier * maxDistortionAmount);
 
             // Get y distortion from oceanicity and upheaval.
-            float upheavalStrength = upheavalMapData.LerpForChunk(chunkX, chunkZ);
+            float upheavalStrength = upheavalMapData.LerpForChunk(localX, localZ);
 
             // Weight upheaval to river.
             upheavalStrength *= riverLerp;
 
-            float oceanicity = oceanMapData.LerpForChunk(chunkX, chunkZ) * oceanicityFac;
+            float oceanicity = oceanMapData.LerpForChunk(localX, localZ) * oceanicityFac;
 
             Vector2d distGeo = ApplyIsotropicDistortionThreshold(dist * geoDistortionMultiplier, geoDistortionThreshold, geoDistortionMultiplier * maxDistortionAmount);
 

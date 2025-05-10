@@ -68,8 +68,7 @@ public class RiverNode : IEquatable<RiverNode>, ISpatialData
 
     public bool Equals(RiverNode? other)
     {
-        if (other == null) return false;
-        return startPos.X == other.startPos.X && startPos.Y == other.startPos.Y && endPos.X == other.endPos.X && endPos.Y == other.endPos.Y;
+        return other != null && startPos.X == other.startPos.X && startPos.Y == other.startPos.Y && endPos.X == other.endPos.X && endPos.Y == other.endPos.Y;
     }
 
     public override int GetHashCode()
@@ -100,14 +99,7 @@ public class RiverNode : IEquatable<RiverNode>, ISpatialData
             Vector2d segmentStart;
             Vector2d segmentEnd;
 
-            if (i == 0)
-            {
-                segmentStart = startPos;
-            }
-            else
-            {
-                segmentStart = newSegments[i - 1].endPos;
-            }
+            segmentStart = i == 0 ? startPos : newSegments[i - 1].endPos;
 
             if (i == config.segmentsInRiver - 1)
             {

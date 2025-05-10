@@ -4,11 +4,11 @@ namespace Rivers;
 
 public interface ISpatialDatabase<T> : ISpatialIndex<T>
 {
-    public void Insert(T item);
+    void Insert(T item);
 
-    public bool Delete(T item);
+    bool Delete(T item);
 
-    public void Clear();
+    void Clear();
 
-    public void BulkLoad(IEnumerable<T> items);
+    void BulkLoad(IEnumerable<T> items);
 }

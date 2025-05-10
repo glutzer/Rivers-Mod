@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
@@ -60,7 +59,8 @@ public class GravelGen : ModStdWorldGen
 
             if (gravelId == 0)
             {
-                Console.WriteLine($"GravelGen: No gravel found for {stratum.BlockCode} ({stratumId}).");
+                sapi.Logger.Error($"GravelGen: No gravel found for {stratum.BlockCode} ({stratumId}).");
+                continue;
             }
 
             gravelMappings.Add(stratumId, gravelId);

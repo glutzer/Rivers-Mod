@@ -436,14 +436,7 @@ public class RiverRegion
     {
         RiverZone[] array = GetZonesAround(zone.xIndex, zone.zIndex, 1).OrderByDescending(x => x.oceanDistance).ToArray();
 
-        if (array[0] == zone || hops == 0)
-        {
-            return zone;
-        }
-        else
-        {
-            return FindHighestZone(array[0], hops - 1);
-        }
+        return array[0] == zone || hops == 0 ? zone : FindHighestZone(array[0], hops - 1);
     }
 
     /// <summary>
