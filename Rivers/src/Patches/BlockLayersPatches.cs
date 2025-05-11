@@ -113,7 +113,6 @@ public class BlockLayersPatches
 
         ushort distance = Distances[(localZ * 32) + localX];
 
-        if (distance == 0) return 0;
-        return distance > 10 ? 1 : (float)RiverMath.InverseLerp(distance, 0, 10);
+        return distance == 0 ? 0 : distance > 10 ? 1 : (float)RiverMath.InverseLerp(distance, 0, 10);
     }
 }
