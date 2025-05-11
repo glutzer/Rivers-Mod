@@ -72,6 +72,7 @@ public class RiverRegion
         // Initialize all zones and determine if they are ocean.
         GenMaps genMaps = sapi.ModLoader.GetModSystem<GenMaps>();
         int noiseSizeOcean = genMaps.GetField<int>("noiseSizeOcean");
+
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < width; z++)
@@ -453,33 +454,49 @@ public class RiverRegion
         int regionX = chunkX / 16;
         int regionZ = chunkZ / 16;
 
-        IntDataMap2D oceanMap = new()
-        {
-            Size = noiseSizeOcean + (2 * oceanPadding),
-            TopLeftPadding = oceanPadding,
-            BottomRightPadding = oceanPadding,
-            Data = genMaps.GetField<MapLayerBase>("oceanGen").GenLayer((regionX * noiseSizeOcean) - oceanPadding,
-                                                                            (regionZ * noiseSizeOcean) - oceanPadding,
-                                                                            noiseSizeOcean + (2 * oceanPadding),
-                                                                            noiseSizeOcean + (2 * oceanPadding))
-        };
+        MapLayerBase oceanGen = genMaps.GetField<MapLayerBase>("oceanGen");
+        IntDataMap2D oceanMap;
 
-        int rlX = chunkX % 16;
-        int rlZ = chunkZ % 16;
+        if (RiverConfig.Loaded.ignoreStoryStructures)
+        {
+            object parent = oceanGen.GetField<object>("parent");
+            List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
+            parent.SetField("requireLandAt", new List<XZ>());
+
+            oceanMap = new()
+            {
+                Size = noiseSizeOcean + (2 * oceanPadding),
+                TopLeftPadding = oceanPadding,
+                BottomRightPadding = oceanPadding,
+                Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                    (regionZ * noiseSizeOcean) - oceanPadding,
+                    noiseSizeOcean + (2 * oceanPadding),
+                    noiseSizeOcean + (2 * oceanPadding))
+            };
+
+            parent.SetField("requireLandAt", requireLandAt);
+        }
+        else
+        {
+            oceanMap = new()
+            {
+                Size = noiseSizeOcean + (2 * oceanPadding),
+                TopLeftPadding = oceanPadding,
+                BottomRightPadding = oceanPadding,
+                Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                    (regionZ * noiseSizeOcean) - oceanPadding,
+                    noiseSizeOcean + (2 * oceanPadding),
+                    noiseSizeOcean + (2 * oceanPadding))
+            };
+        }
 
         int localX = zoneWorldX % 32;
         int localZ = zoneWorldZ % 32;
 
-        float chunkBlockDelta = 1.0f / 16;
-
-        float oceanFactor = (float)oceanMap.InnerSize / 16;
-        int oceanUpLeft = oceanMap.GetUnpaddedInt((int)(rlX * oceanFactor), (int)(rlZ * oceanFactor));
-        int oceanUpRight = oceanMap.GetUnpaddedInt((int)((rlX * oceanFactor) + oceanFactor), (int)(rlZ * oceanFactor));
-        int oceanBotLeft = oceanMap.GetUnpaddedInt((int)(rlX * oceanFactor), (int)((rlZ * oceanFactor) + oceanFactor));
-        int oceanBotRight = oceanMap.GetUnpaddedInt((int)((rlX * oceanFactor) + oceanFactor), (int)((rlZ * oceanFactor) + oceanFactor));
+        IntMapData values = oceanMap.GetValues(chunkX, chunkZ);
         float oceanicityFactor = sapi.WorldManager.MapSizeY / 256 * 0.33333f;
 
-        double zoneOceanicity = GameMath.BiLerp(oceanUpLeft, oceanUpRight, oceanBotLeft, oceanBotRight, localX * chunkBlockDelta, localZ * chunkBlockDelta) * oceanicityFactor;
+        double zoneOceanicity = values.LerpForChunk(localX, localZ) * oceanicityFactor;
 
         if (zoneOceanicity > config.oceanThreshold)
         {

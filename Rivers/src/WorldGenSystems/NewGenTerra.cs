@@ -64,7 +64,7 @@ public class NewGenTerra : ModStdWorldGen
     public float[][] terrainYThresholds = null!;
 
     public int riverIndex;
-    public LandformVariant riverVariant = null!;
+    public LandformVariant riverVariant;
 
     // Initialized in InitWorldGen.
     public NewNormalizedSimplexFractalNoise terrainNoise = null!;
@@ -86,6 +86,20 @@ public class NewGenTerra : ModStdWorldGen
 
     public RiverGenerator riverGenerator = null!; // Can't be in constructor (loaded before config).
 
+    public NewGenTerra()
+    {
+        riverVariant = new LandformVariant
+        {
+            Weight = 0,
+            Code = "riverlandform",
+            TerrainOctaves = new double[] { 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+            TerrainOctaveThresholds = new double[] { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            TerrainYKeyPositions = new float[] { 0.43f, 0.44f, 0.45f, 0.46f },
+            TerrainYKeyThresholds = new float[] { 1.000f, 0.500f, 0.250f, 0.000f },
+            HexColor = "#79E02E"
+        };
+    }
+
     public override void StartServerSide(ICoreServerAPI api)
     {
         sapi = api;
@@ -93,8 +107,6 @@ public class NewGenTerra : ModStdWorldGen
         api.Event.ServerRunPhase(EnumServerRunPhase.ModsAndConfigReady, LoadGamePre);
         api.Event.InitWorldGenerator(InitWorldGen, "standard");
         api.Event.ChunkColumnGeneration(OnChunkColumnGen, EnumWorldGenPass.Terrain, "standard");
-
-        //InitWorldGen(); This was being called here before for some reason.
     }
 
     /// <summary>
@@ -178,7 +190,7 @@ public class NewGenTerra : ModStdWorldGen
             {
                 lerpedAmplitudes = new double[terrainGenOctaves],
                 lerpedThresholds = new double[terrainGenOctaves],
-                landformWeights = new float[landType.GetStaticField<LandformsWorldProperty>("landforms").LandFormsByIndex.Length]
+                landformWeights = new float[landType.GetStaticField<LandformsWorldProperty>("landforms").LandFormsByIndex.Length + 1] // Include the river.
             });
 
             initialized = true;
@@ -210,33 +222,30 @@ public class NewGenTerra : ModStdWorldGen
         if (landType == null) throw new Exception("NoiseLandforms type not found.");
         landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
 
-        terrainYThresholds = new float[landforms.LandFormsByIndex.Length][];
+        terrainYThresholds = new float[landforms.LandFormsByIndex.Length + 1][];
         for (int i = 0; i < landforms.LandFormsByIndex.Length; i++)
         {
-            // Get river landform and adjust it to new world height.
-            if (landforms.LandFormsByIndex[i].Code.ToString() == "game:riverlandform")
-            {
-                LandformVariant riverLandform = landforms.LandFormsByIndex[i];
-
-                riverIndex = i;
-                riverVariant = riverLandform;
-
-                float modifier = 256f / sapi.WorldManager.MapSizeY;
-
-                float seaLevelThreshold = 0.4313725490196078f;
-                float blockThreshold = seaLevelThreshold / 110 * modifier;
-
-                riverLandform.TerrainYKeyPositions[0] = seaLevelThreshold; // 100% chance to be atleast sea level.
-                riverLandform.TerrainYKeyPositions[1] = seaLevelThreshold + (blockThreshold * 4); // 50% chance to be atleast 4 blocks above sea level.
-                riverLandform.TerrainYKeyPositions[2] = seaLevelThreshold + (blockThreshold * 9); // 25% chance to be atleast 6 blocks above sea level.
-                riverLandform.TerrainYKeyPositions[3] = seaLevelThreshold + (blockThreshold * 15); // 0% chance to be astleast 10 blocks above sea level.
-
-                // Re-lerp with adjusted heights.
-                riverLandform.CallMethod("LerpThresholds", sapi.WorldManager.MapSizeY);
-            }
-
             terrainYThresholds[i] = landforms.LandFormsByIndex[i].TerrainYThresholds;
         }
+
+        riverIndex = terrainYThresholds.Length - 1; // The last index is the river landform.
+
+        // Set river variant.
+        float modifier = 256f / sapi.WorldManager.MapSizeY;
+
+        float seaLevelThreshold = 0.4313725490196078f;
+        float blockThreshold = seaLevelThreshold / 110 * modifier;
+
+        riverVariant.TerrainYKeyPositions[0] = seaLevelThreshold; // 100% chance to be atleast sea level.
+        riverVariant.TerrainYKeyPositions[1] = seaLevelThreshold + (blockThreshold * 4); // 50% chance to be atleast 4 blocks above sea level.
+        riverVariant.TerrainYKeyPositions[2] = seaLevelThreshold + (blockThreshold * 9); // 25% chance to be atleast 6 blocks above sea level.
+        riverVariant.TerrainYKeyPositions[3] = seaLevelThreshold + (blockThreshold * 15); // 0% chance to be astleast 10 blocks above sea level.
+        riverVariant.Init(sapi.WorldManager, 0);
+
+        // Re-lerp with adjusted heights.
+        riverVariant.CallMethod("LerpThresholds", sapi.WorldManager.MapSizeY);
+
+        terrainYThresholds[riverIndex] = riverVariant.TerrainYThresholds;
     }
 
     private void OnChunkColumnGen(IChunkColumnGenerateRequest request)
@@ -381,11 +390,13 @@ public class NewGenTerra : ModStdWorldGen
             double[] lerpedAmps = tempDataThreadLocal.Value.lerpedAmplitudes;
             double[] lerpedThresh = tempDataThreadLocal.Value.lerpedThresholds;
 
+            // This is the weight of the landforms for this block column.
             float[] columnLandformIndexedWeights = tempDataThreadLocal.Value.landformWeights;
             landLerpMap.WeightsAt(baseX + (localX * chunkPixelBlockStep), baseZ + (localZ * chunkPixelBlockStep), columnLandformIndexedWeights);
+            columnLandformIndexedWeights[^1] = 0f; // Set river landform weight to 0 by default.
 
             // Weight landform to river.
-            if (riverLerp < 1)
+            if (riverLerp < 1f)
             {
                 // Multiply all landforms weights by river lerp.
                 for (int i = 0; i < columnLandformIndexedWeights.Length; i++)

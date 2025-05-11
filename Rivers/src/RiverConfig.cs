@@ -97,4 +97,9 @@ public class RiverConfig
 
     // Better valleys.
     public bool valleysV2 = false;
+
+    // Ignore story structures when generating ocean, for better ruins and speed.
+    // Will generate SIGNIFICANTLY faster (120s with better ruins, 30s vanilla, 4s with this on).
+    // The way oceans are generated is really stupid, I can't make total sense of it.
+    public bool ignoreStoryStructures = false;
 }

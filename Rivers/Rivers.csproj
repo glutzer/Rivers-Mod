@@ -68,6 +68,7 @@
 
 <ItemGroup>
   <Folder Include="assets\game\" />
+  <Folder Include="assets\rivers\patches\" />
 </ItemGroup>
 
 </Project>
