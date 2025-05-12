@@ -102,4 +102,6 @@ public class RiverConfig
     // Will generate SIGNIFICANTLY faster (120s with better ruins, 30s vanilla, 4s with this on).
     // The way oceans are generated is really stupid, I can't make total sense of it.
     public bool ignoreStoryStructures = false;
+
+    public bool cacheZones = true;
 }

@@ -1,10 +1,13 @@
 ﻿using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
+using Vintagestory.API.Util;
 using Vintagestory.ServerMods;
 
 namespace Rivers;
@@ -23,7 +26,7 @@ public class RiverRegion
     public Vector2i regionIndex;
     public Vector2d GlobalRegionStart => new(regionIndex.X * config.RegionSize, regionIndex.Y * config.RegionSize);
 
-    public RiverZone[,] zones;
+    public RiverZone[] zones;
 
     // All river starts in this region.
     public List<RiverSegment> riverStarts = new();
@@ -58,8 +61,44 @@ public class RiverRegion
         regionIndex = new Vector2i(plateX, plateZ);
 
         // Initialize all zones.
-        zones = new RiverZone[config.zonesInRegion, config.zonesInRegion];
+        zones = new RiverZone[config.zonesInRegion * config.zonesInRegion];
         GenerateZones(plateX, plateZ);
+    }
+
+    public void GetOrCreateZones(int plateX, int plateZ, Action createZones)
+    {
+        string cachePath = Path.Combine(GamePaths.DataPath, "RiverCache", sapi.World.SavegameIdentifier);
+
+        // Make folder if it doesn't exist.
+        if (!Directory.Exists(cachePath))
+        {
+            Directory.CreateDirectory(cachePath);
+        }
+
+        string filePath = Path.Combine(cachePath, $"{plateX}_{plateZ}.bin");
+
+        if (!File.Exists(filePath))
+        {
+            // Create and return.
+            createZones();
+            byte[] zoneData = SerializerUtil.Serialize(zones);
+            File.WriteAllBytes(filePath, zoneData);
+            return;
+        }
+
+        byte[] data = File.ReadAllBytes(filePath);
+        RiverZone[]? newZones = SerializerUtil.Deserialize<RiverZone[]>(data);
+
+        if (newZones == null || newZones.Length != config.zonesInRegion * config.zonesInRegion)
+        {
+            // Create and return.
+            createZones();
+            byte[] zoneData = SerializerUtil.Serialize(zones);
+            File.WriteAllBytes(filePath, zoneData);
+            return;
+        }
+
+        zones = newZones;
     }
 
     public void GenerateZones(int plateX, int plateZ)
@@ -73,18 +112,41 @@ public class RiverRegion
         GenMaps genMaps = sapi.ModLoader.GetModSystem<GenMaps>();
         int noiseSizeOcean = genMaps.GetField<int>("noiseSizeOcean");
 
-        for (int x = 0; x < width; x++)
+        if (RiverConfig.Loaded.cacheZones)
         {
-            for (int z = 0; z < width; z++)
+            GetOrCreateZones(plateX, plateZ, () =>
             {
-                RiverZone zone = zones[x, z] = new RiverZone(
-                    (x * config.zoneSize) + (config.zoneSize / 2),
-                    (z * config.zoneSize) + (config.zoneSize / 2),
-                    x,
-                    z);
+                for (int x = 0; x < width; x++)
+                {
+                    for (int z = 0; z < width; z++)
+                    {
+                        RiverZone zone = zones[(z * config.zonesInRegion) + x] = new RiverZone(
+                            (x * config.zoneSize) + (config.zoneSize / 2),
+                            (z * config.zoneSize) + (config.zoneSize / 2),
+                            x,
+                            z);
 
-                // This takes a really long time but I'm not going to figure out why.
-                SetZoneOceanicity(zone, genMaps, noiseSizeOcean);
+                        // This takes a really long time but I'm not going to figure out why.
+                        SetZoneOceanicity(zone, genMaps, noiseSizeOcean);
+                    }
+                }
+            });
+        }
+        else
+        {
+            for (int x = 0; x < width; x++)
+            {
+                for (int z = 0; z < width; z++)
+                {
+                    RiverZone zone = zones[(z * config.zonesInRegion) + x] = new RiverZone(
+                        (x * config.zoneSize) + (config.zoneSize / 2),
+                        (z * config.zoneSize) + (config.zoneSize / 2),
+                        x,
+                        z);
+
+                    // This takes a really long time but I'm not going to figure out why.
+                    SetZoneOceanicity(zone, genMaps, noiseSizeOcean);
+                }
             }
         }
 
@@ -97,7 +159,7 @@ public class RiverRegion
         {
             for (int z = 0; z < width; z++)
             {
-                RiverZone zone = zones[x, z];
+                RiverZone zone = zones[(z * config.zonesInRegion) + x];
                 if (zone.oceanZone) continue;
                 queue.Clear();
                 visited.Clear();
@@ -124,7 +186,7 @@ public class RiverRegion
                         if (nx < 0 || nx >= width || nz < 0 || nz >= width) continue; // Adjacent tile is out of bounds.
                         if (visited.Contains(new Vector2i(nx, nz))) continue; // Adjacent tile has already been visited.
 
-                        RiverZone adjacent = zones[nx, nz];
+                        RiverZone adjacent = zones[(nz * config.zonesInRegion) + nx];
 
                         // If this tile is farther from the ocean than the current closest tile, skip it.
                         if (zone.localZoneCenterPosition.DistanceTo(adjacent.localZoneCenterPosition) > closestOceanTile) continue;
@@ -148,7 +210,7 @@ public class RiverRegion
         {
             for (int z = 0; z < width; z++)
             {
-                RiverZone zone = zones[x, z];
+                RiverZone zone = zones[(z * config.zonesInRegion) + x];
 
                 // Only generate from oceans.
                 if (!zone.oceanZone) continue;
@@ -159,7 +221,7 @@ public class RiverRegion
                 {
                     for (int zz = -1; zz < 2; zz++)
                     {
-                        if (zones[Math.Clamp(x + xz, 0, config.zonesInRegion - 1), Math.Clamp(z + zz, 0, config.zonesInRegion - 1)].oceanZone == false)
+                        if (zones[Math.Clamp(x + xz, 0, config.zonesInRegion - 1) + (Math.Clamp(z + zz, 0, config.zonesInRegion - 1) * config.zonesInRegion)].oceanZone == false)
                         {
                             zone.coastalZone = true;
                             break;
@@ -411,7 +473,7 @@ public class RiverRegion
             {
                 if (localZoneX + x < 0 || localZoneX + x > config.zonesInRegion - 1 || localZoneZ + z < 0 || localZoneZ + z > config.zonesInRegion - 1) continue;
 
-                zonesListerino.Add(zones[localZoneX + x, localZoneZ + z]);
+                zonesListerino.Add(zones[localZoneX + x + ((localZoneZ + z) * config.zonesInRegion)]);
             }
         }
 
@@ -426,7 +488,7 @@ public class RiverRegion
         int zx = (int)Math.Clamp(localX / config.zoneSize, 0, config.zonesInRegion - 1);
         int zz = (int)Math.Clamp(localZ / config.zoneSize, 0, config.zonesInRegion - 1);
 
-        return zones[zx, zz];
+        return zones[zx + (zz * config.zonesInRegion)];
     }
 
     /// <summary>
