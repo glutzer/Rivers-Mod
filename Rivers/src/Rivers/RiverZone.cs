@@ -1,12 +1,24 @@
 ﻿using OpenTK.Mathematics;
+using ProtoBuf;
+using ProtoBuf.Meta;
+using System.Runtime.CompilerServices;
 
 namespace Rivers;
 
 /// <summary>
 /// One zone in a region of rivers, like a civ tile.
 /// </summary>
+[ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class RiverZone
 {
+    [ModuleInitializer]
+    internal static void Init()
+    {
+        RuntimeTypeModel.Default.Add(typeof(Vector2d), false)
+            .Add("X")
+            .Add("Y");
+    }
+
     // Center of region.
     public Vector2d localZoneCenterPosition;
 
@@ -14,8 +26,8 @@ public class RiverZone
     public double oceanDistance;
 
     // River generation info.
-    public readonly int xIndex;
-    public readonly int zIndex;
+    public int xIndex;
+    public int zIndex;
 
     public bool coastalZone;
     public bool oceanZone;
@@ -25,5 +37,10 @@ public class RiverZone
         localZoneCenterPosition = new Vector2d(centerPositionX, centerPositionZ);
         this.xIndex = xIndex;
         this.zIndex = zIndex;
+    }
+
+    public RiverZone()
+    {
+
     }
 }
