@@ -22,7 +22,7 @@ public class EntityBehaviorPhysicsPatch
     {
         public static bool Prefix(PModuleInLiquid __instance, float dt, Entity entity, EntityPos pos, EntityControls controls)
         {
-            if (entity is EntityPlayer player)
+            if (entity is EntityPlayer)
             {
                 IWorldChunk chunk = entity.Api.World.BlockAccessor.GetChunk((int)pos.X / 32, 0, (int)pos.Z / 32);
                 float[]? flowVectors = chunk?.GetModdata<float[]>("flowVectors");
