@@ -103,7 +103,8 @@ public class BlockLayersPatches
 
     public static void SetVectors(IServerChunk[] chunks)
     {
-        Distances = chunks[0].MapChunk.GetModdata<ushort[]>("riverDistance");
+        if (chunks == null) return;
+        Distances = chunks[0]?.MapChunk.GetModdata<ushort[]>("riverDistance");
     }
 
     // Disable Y level boost in dry areas.
