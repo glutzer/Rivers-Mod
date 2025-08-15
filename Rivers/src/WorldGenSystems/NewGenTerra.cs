@@ -63,9 +63,6 @@ public class NewGenTerra : ModStdWorldGen
     public LandformsWorldProperty landforms = null!;
     public float[][] terrainYThresholds = null!;
 
-    public int riverIndex;
-    public LandformVariant riverVariant;
-
     // Initialized in InitWorldGen.
     public NewNormalizedSimplexFractalNoise terrainNoise = null!;
     public SimplexNoise distort2dx = null!;
@@ -86,16 +83,7 @@ public class NewGenTerra : ModStdWorldGen
 
     public NewGenTerra()
     {
-        riverVariant = new LandformVariant
-        {
-            Weight = 0,
-            Code = "riverlandform",
-            TerrainOctaves = [0, 0, 0, 0, 0, 1, 0, 0, 0],
-            TerrainOctaveThresholds = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            TerrainYKeyPositions = [0.43f, 0.44f, 0.45f, 0.46f],
-            TerrainYKeyThresholds = [1.000f, 0.500f, 0.250f, 0.000f],
-            HexColor = "#79E02E"
-        };
+
     }
 
     public override void StartServerSide(ICoreServerAPI api)
@@ -127,7 +115,6 @@ public class NewGenTerra : ModStdWorldGen
         LoadGlobalConfig(sapi);
 
         landformMapCache.Clear();
-
         riverGenerator = new RiverGenerator(sapi);
 
         // Get the NoiseLandforms type for reflection later.
@@ -188,7 +175,7 @@ public class NewGenTerra : ModStdWorldGen
             {
                 lerpedAmplitudes = new double[terrainGenOctaves],
                 lerpedThresholds = new double[terrainGenOctaves],
-                landformWeights = new float[landType.GetStaticField<LandformsWorldProperty>("landforms").LandFormsByIndex.Length + 1] // Include the river.
+                landformWeights = new float[landType.GetStaticField<LandformsWorldProperty>("landforms").LandFormsByIndex.Length * 2] // A river adjacent landform for every landform.
             });
 
             initialized = true;
@@ -204,6 +191,8 @@ public class NewGenTerra : ModStdWorldGen
         }
     }
 
+    private LandformVariant[] riverAdjacentVariants = [];
+
     /// <summary>
     /// Needs to set the "river" land type which is around river borders and will be lerped to based on the river distance and valley strength.
     /// For example: the edge of the river may be 50% of this landform.
@@ -213,13 +202,22 @@ public class NewGenTerra : ModStdWorldGen
         if (landType == null) throw new Exception("NoiseLandforms type not found.");
         landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
 
-        terrainYThresholds = new float[landforms.LandFormsByIndex.Length + 1][];
+        terrainYThresholds = new float[landforms.LandFormsByIndex.Length * 2][];
+        riverAdjacentVariants = new LandformVariant[landforms.LandFormsByIndex.Length];
+
+
+
+
+
         for (int i = 0; i < landforms.LandFormsByIndex.Length; i++)
         {
             terrainYThresholds[i] = landforms.LandFormsByIndex[i].TerrainYThresholds;
         }
 
-        riverIndex = terrainYThresholds.Length - 1; // The last index is the river landform.
+        for (int i = 0; i < riverAdjacentVariants.Length; i++)
+        {
+            terrainYThresholds[landforms.LandFormsByIndex.Length + i] = riverAdjacentVariants[i].TerrainYThresholds;
+        }
 
         // Set river variant.
         float modifier = 256f / sapi.WorldManager.MapSizeY;
