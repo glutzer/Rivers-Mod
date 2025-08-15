@@ -521,22 +521,38 @@ public class RiverRegion
 
         if (RiverConfig.Loaded.ignoreStoryStructures)
         {
-            object parent = oceanGen.GetField<object>("parent");
-            List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
-            parent.SetField("requireLandAt", new List<XZ>());
-
-            oceanMap = new()
+            try
             {
-                Size = noiseSizeOcean + (2 * oceanPadding),
-                TopLeftPadding = oceanPadding,
-                BottomRightPadding = oceanPadding,
-                Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                object parent = oceanGen.GetField<object>("parent");
+                List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
+                parent.SetField("requireLandAt", new List<XZ>());
+
+                oceanMap = new()
+                {
+                    Size = noiseSizeOcean + (2 * oceanPadding),
+                    TopLeftPadding = oceanPadding,
+                    BottomRightPadding = oceanPadding,
+                    Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                        (regionZ * noiseSizeOcean) - oceanPadding,
+                        noiseSizeOcean + (2 * oceanPadding),
+                        noiseSizeOcean + (2 * oceanPadding))
+                };
+
+                parent.SetField("requireLandAt", requireLandAt);
+            }
+            catch // Ocean map has been changed to another field.
+            {
+                oceanMap = new()
+                {
+                    Size = noiseSizeOcean + (2 * oceanPadding),
+                    TopLeftPadding = oceanPadding,
+                    BottomRightPadding = oceanPadding,
+                    Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
                     (regionZ * noiseSizeOcean) - oceanPadding,
                     noiseSizeOcean + (2 * oceanPadding),
                     noiseSizeOcean + (2 * oceanPadding))
-            };
-
-            parent.SetField("requireLandAt", requireLandAt);
+                };
+            }
         }
         else
         {

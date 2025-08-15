@@ -39,7 +39,7 @@ public class LiquidTesselatorPatch
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
         {
-            List<CodeInstruction> code = new(instructions);
+            List<CodeInstruction> code = [.. instructions];
             int insertionIndex = -1;
 
             for (int i = 4; i < code.Count - 4; i++) // -1 since checking i + 1.
@@ -51,13 +51,13 @@ public class LiquidTesselatorPatch
                 }
             }
 
-            List<CodeInstruction> ins = new()
-            {
+            List<CodeInstruction> ins =
+            [
                 new CodeInstruction(OpCodes.Ldarg_0),
                 new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(LiquidTesselator), "upFlowVectors")),
                 new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(LiquidTesselatorPatch), "TesselateFlow"))
-            };
+            ];
 
             if (insertionIndex != -1)
             {

@@ -1,11 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>bin\$(Configuration)\Mods\mod</OutputPath>
     <Nullable>Enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="assets\**" />
+    <EmbeddedResource Remove="assets\**" />
+    <None Remove="assets\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="OpenTK.Mathematics">
@@ -58,17 +64,6 @@
   <None Update="modinfo.json">
     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
   </None>
-</ItemGroup>
-
-<ItemGroup>
-    <Content Include="assets\**">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-</ItemGroup>
-
-<ItemGroup>
-  <Folder Include="assets\game\" />
-  <Folder Include="assets\rivers\patches\" />
 </ItemGroup>
 
 </Project>

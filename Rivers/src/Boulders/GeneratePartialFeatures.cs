@@ -74,7 +74,7 @@ public class GeneratePartialFeatures : WorldGenPartial
     {
         chunkRand.InitPositionSeed(generatingChunkX, generatingChunkZ);
 
-        IMapChunk mapChunk = sapi.WorldManager.GetMapChunk(generatingChunkX, generatingChunkZ);
+        IMapChunk mapChunk = chunks[0].MapChunk;
 
         ushort[] ownHeightMap = chunks[0].MapChunk.WorldGenTerrainHeightMap;
         ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;

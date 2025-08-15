@@ -16,7 +16,7 @@ public class RiversMod : ModSystem
 {
     private static Harmony? Harmony { get; set; }
 
-    public static float RiverSpeed { get; set; } = 1;
+    public static float RiverSpeed { get; set; } = 1f;
 
     public IClientNetworkChannel clientChannel = null!;
     public IServerNetworkChannel serverChannel = null!;
@@ -24,17 +24,6 @@ public class RiversMod : ModSystem
     public override double ExecuteOrder()
     {
         return 0;
-    }
-
-    public override void AssetsLoaded(ICoreAPI api)
-    {
-        // Would alter assets for clay here, but that's removed.
-    }
-
-    public override void Start(ICoreAPI api)
-    {
-        // Register all blocks here, but no blocks are currently being registered.
-        // Potentially use the lib and register them that way.
     }
 
     public override void StartClientSide(ICoreClientAPI api)
