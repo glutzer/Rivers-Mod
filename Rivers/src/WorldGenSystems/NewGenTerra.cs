@@ -61,10 +61,9 @@ public class NewGenTerra : ModStdWorldGen
 
     // Set when first fetching landforms.
     public LandformsWorldProperty landforms = null!;
-    public float[][] terrainYThresholds = null!;
 
-    public int riverIndex;
-    public LandformVariant riverVariant;
+    public float[][] terrainYThresholds = null!;
+    public RiverLandform[] riverYThresholds = null!;
 
     // Initialized in InitWorldGen.
     public NewNormalizedSimplexFractalNoise terrainNoise = null!;
@@ -86,16 +85,7 @@ public class NewGenTerra : ModStdWorldGen
 
     public NewGenTerra()
     {
-        riverVariant = new LandformVariant
-        {
-            Weight = 0,
-            Code = "riverlandform",
-            TerrainOctaves = [0, 0, 0, 0, 0, 1, 0, 0, 0],
-            TerrainOctaveThresholds = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            TerrainYKeyPositions = [0.43f, 0.44f, 0.45f, 0.46f],
-            TerrainYKeyThresholds = [1.000f, 0.500f, 0.250f, 0.000f],
-            HexColor = "#79E02E"
-        };
+
     }
 
     public override void StartServerSide(ICoreServerAPI api)
@@ -213,30 +203,13 @@ public class NewGenTerra : ModStdWorldGen
         if (landType == null) throw new Exception("NoiseLandforms type not found.");
         landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
 
-        terrainYThresholds = new float[landforms.LandFormsByIndex.Length + 1][];
+        terrainYThresholds = new float[landforms.LandFormsByIndex.Length][];
+        riverYThresholds = new RiverLandform[landforms.LandFormsByIndex.Length];
         for (int i = 0; i < landforms.LandFormsByIndex.Length; i++)
         {
             terrainYThresholds[i] = landforms.LandFormsByIndex[i].TerrainYThresholds;
+            riverYThresholds[i] = new RiverLandform(landforms.LandFormsByIndex[i], sapi.WorldManager.MapSizeY);
         }
-
-        riverIndex = terrainYThresholds.Length - 1; // The last index is the river landform.
-
-        // Set river variant.
-        float modifier = 256f / sapi.WorldManager.MapSizeY;
-
-        float seaLevelThreshold = 0.4313725490196078f;
-        float blockThreshold = seaLevelThreshold / 110f * modifier;
-
-        riverVariant.TerrainYKeyPositions[0] = seaLevelThreshold; // 100% chance to be atleast sea level.
-        riverVariant.TerrainYKeyPositions[1] = seaLevelThreshold + (blockThreshold * 4f); // 50% chance to be atleast 4 blocks above sea level.
-        riverVariant.TerrainYKeyPositions[2] = seaLevelThreshold + (blockThreshold * 9f); // 25% chance to be atleast 6 blocks above sea level.
-        riverVariant.TerrainYKeyPositions[3] = seaLevelThreshold + (blockThreshold * 15f); // 0% chance to be astleast 10 blocks above sea level.
-        riverVariant.Init(sapi.WorldManager, 0);
-
-        // Re-lerp with adjusted heights.
-        riverVariant.CallMethod("LerpThresholds", sapi.WorldManager.MapSizeY);
-
-        terrainYThresholds[riverIndex] = riverVariant.TerrainYThresholds;
     }
 
     private void OnChunkColumnGen(IChunkColumnGenerateRequest request)
@@ -384,40 +357,6 @@ public class NewGenTerra : ModStdWorldGen
             // This is the weight of the landforms for this block column.
             float[] columnLandformIndexedWeights = tempDataThreadLocal.Value.landformWeights;
             landLerpMap.WeightsAt(baseX + (localX * chunkPixelBlockStep), baseZ + (localZ * chunkPixelBlockStep), columnLandformIndexedWeights);
-            columnLandformIndexedWeights[^1] = 0f; // Set river landform weight to 0 by default.
-
-            // Weight landform to river.
-            if (riverLerp < 1f)
-            {
-                // Multiply all landforms weights by river lerp.
-                for (int i = 0; i < columnLandformIndexedWeights.Length; i++)
-                {
-                    columnLandformIndexedWeights[i] *= riverLerp;
-                }
-
-                // Add inverse to river landform, which cannot naturally occur.
-                columnLandformIndexedWeights[riverIndex] += 1f - riverLerp;
-
-                for (int i = 0; i < lerpedAmps.Length; i++)
-                {
-                    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-
-                    lerpedAmps[i] *= riverLerp;
-                    lerpedThresh[i] *= riverLerp;
-
-                    lerpedAmps[i] += riverVariant.TerrainOctaves[i] * (1f - riverLerp);
-                    lerpedThresh[i] += riverVariant.TerrainOctaveThresholds[i] * (1f - riverLerp);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < lerpedAmps.Length; i++)
-                {
-                    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                }
-            }
 
             // Create a directional compression effect.
             Vector2d dist = NewDistortionNoise(worldX, worldZ);
