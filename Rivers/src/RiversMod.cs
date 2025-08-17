@@ -17,6 +17,7 @@ public class RiversMod : ModSystem
     private static Harmony? Harmony { get; set; }
 
     public static float RiverSpeed { get; set; } = 1f;
+    public static bool ClientFlowDisabled { get; private set; }
 
     public IClientNetworkChannel clientChannel = null!;
     public IServerNetworkChannel serverChannel = null!;
@@ -55,12 +56,15 @@ public class RiversMod : ModSystem
     private void Event_PlayerJoin(IServerPlayer byPlayer)
     {
         // Inform new players what the speed set by the server is.
-        serverChannel.SendPacket(new SpeedMessage() { riverSpeed = RiverConfig.Loaded.riverSpeed }, byPlayer);
+        serverChannel.SendPacket(new SpeedMessage() { riverSpeed = RiverConfig.Loaded.riverSpeed, flowDisabled = RiverConfig.Loaded.disableFlow }, byPlayer);
     }
 
     public static void OnSpeedMessage(SpeedMessage message)
     {
         RiverSpeed = message.riverSpeed;
+        ClientFlowDisabled = message.flowDisabled;
+
+        Patch();
     }
 
     public override void StartPre(ICoreAPI api)
@@ -88,6 +92,12 @@ public class RiversMod : ModSystem
             api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
         }
 #endif
+
+        if (api is ICoreClientAPI capi && !capi.IsSinglePlayer)
+        {
+            // Don't patch until the message has been received on a dedicated server.
+            return;
+        }
 
         Patch();
     }
@@ -136,7 +146,8 @@ public class RiversMod : ModSystem
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class SpeedMessage
 {
-    public float riverSpeed = 1;
+    public float riverSpeed = 1f;
+    public bool flowDisabled;
 }
 
 public class RiverZoomCommand : ClientChatCommand

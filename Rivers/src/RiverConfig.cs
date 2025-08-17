@@ -4,6 +4,7 @@ public class RiverConfig
 {
     public static RiverConfig Loaded { get; set; } = new RiverConfig();
 
+    // Should flow be disabled? Server side.
     public bool disableFlow = false;
 
     public int minForkAngle = 10; // When a river forks, each segment will go at this angle minimum.
@@ -54,7 +55,7 @@ public class RiverConfig
     public float riverSplitChance = 0.35f;
 
     // Chance for a lake when nodes stop.
-    public float lakeChance = 0.15f;
+    public float lakeChance = 0.1f;
 
     public int segmentsInRiver = 3; // Sub-segments 1 node is comprised of.
     public double segmentOffset = 40; // How much to offset each inner segment in blocks.
