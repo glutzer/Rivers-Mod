@@ -14,9 +14,11 @@ public class GeneratePartialFeatures : WorldGenPartial
         return 0.15;
     }
 
+    private bool loaded;
+
     public IWorldGenBlockAccessor blockAccessor = null!;
 
-    public List<PartialFeature> features = new();
+    public List<PartialFeature> features = [];
 
     // Can't be more than 1 because neighbor chunks are required.
     public override int ChunkRange => 1;
@@ -45,19 +47,22 @@ public class GeneratePartialFeatures : WorldGenPartial
         // Load config into the system base.
         LoadGlobalConfig(sapi);
 
+        if (loaded) return; // UHh it inits when doing wgen regen.
+        loaded = true;
+
         FeatureRiverBoulder riverBoulder = new(sapi)
         {
-            hSize = 5,
-            hSizeVariance = 5,
+            hSize = 5f,
+            hSizeVariance = 5f,
             tries = 3,
-            chance = 0.1f,
+            chance = 0.05f,
             noise = new Noise(0, 0.05f, 2)
         };
 
         FeatureTinyBoulder tinyBoulder = new(sapi)
         {
-            hSize = 2,
-            hSizeVariance = 1,
+            hSize = 2f,
+            hSizeVariance = 1f,
             tries = 10,
             chance = 0.15f,
             noise = new Noise(0, 0.05f, 2)
@@ -74,9 +79,8 @@ public class GeneratePartialFeatures : WorldGenPartial
     {
         chunkRand.InitPositionSeed(generatingChunkX, generatingChunkZ);
 
-        IMapChunk mapChunk = chunks[0].MapChunk;
+        IMapChunk mapChunk = blockAccessor.GetMapChunk(generatingChunkX, generatingChunkZ);
 
-        ushort[] ownHeightMap = chunks[0].MapChunk.WorldGenTerrainHeightMap;
         ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
         ushort[] riverDistanceMap = mapChunk.GetModdata<ushort[]>("riverDistance");
 
@@ -117,7 +121,7 @@ public class GeneratePartialFeatures : WorldGenPartial
 
                 int rockId = mapChunk.TopRockIdMap[(randZ * chunkSize) + randX];
 
-                feature.Generate(pos, chunks, chunkRand, new Vec2d(mainChunkX * chunkSize, mainChunkZ * chunkSize), new Vec2d((mainChunkX * chunkSize) + chunkSize - 1, (mainChunkZ * chunkSize) + chunkSize - 1), blockAccessor, rockId, dry, ownHeightMap);
+                feature.Generate(pos, chunks, chunkRand, new Vec2d(mainChunkX * chunkSize, mainChunkZ * chunkSize), new Vec2d((mainChunkX * chunkSize) + chunkSize - 1, (mainChunkZ * chunkSize) + chunkSize - 1), blockAccessor, rockId, dry, heightMap);
             }
         }
     }

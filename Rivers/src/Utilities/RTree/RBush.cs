@@ -43,13 +43,13 @@ public partial class RBush<T> : ISpatialDatabase<T>, ISpatialIndex<T> where T : 
     [MemberNotNull(nameof(Root))]
     public void Clear()
     {
-        Root = new Node(new List<ISpatialData>(), 1);
+        Root = new Node([], 1);
         Count = 0;
     }
 
     public IReadOnlyList<T> Search()
     {
-        return GetAllChildren(new List<T>(), Root);
+        return GetAllChildren([], Root);
     }
 
     public IReadOnlyList<T> Search(in Envelope boundingBox)

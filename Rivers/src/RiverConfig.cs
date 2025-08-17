@@ -13,7 +13,7 @@ public class RiverConfig
     // Maximum the current landform with lerp to the river at the river border.
     // 1 min, 1 max = always a full valley.
     // 0 min, 0 max = always a cave.
-    public float valleyStrengthMax = 1;
+    public float valleyStrengthMax = 1f;
     public float valleyStrengthMin = 0.4f;
     public float noiseExpansion = 1.5f; // How much the noise will be mulitplied before being clamped. Will make it transition from min -> max faster.
 
@@ -23,12 +23,9 @@ public class RiverConfig
     // Prevents overlapping rivers.
     public int riverPaddingBlocks = 128;
 
-    // How much to multiply the land scale by, to make the continents larger.
-    public float landScaleMultiplier = 1;
-
     // Minimum and maximum size of rivers, in width.
-    public float minSize = 14;
-    public float maxSize = 50;
+    public float minSize = 14f;
+    public float maxSize = 50f;
 
     // Minimum amount of segments a river must be to not be culled after map generated. Maximum amount before generation stops.
     public int minNodes = 8;
@@ -68,23 +65,23 @@ public class RiverConfig
 
     // How much the ellipsoid carving the river should start above sea level and how big the top is in relation.
     public int heightBoost = 8;
-    public float topFactor = 1;
+    public float topFactor = 1f;
 
     // Values relating to distortion of rivers.
     public int riverOctaves = 2;
     public float riverFrequency = 0.0075f;
-    public float riverLacunarity = 3;
+    public float riverLacunarity = 3f;
     public float riverGain = 0.3f;
     public int riverDistortionStrength = 10;
 
     // How fast rivers and water wheels should flow, can be changed after worldgen.
-    public float riverSpeed = 4;
+    public float riverSpeed = 4f;
 
     // How wide a valley can be at world height.
     public double maxValleyWidth = 75;
 
     // How many blocks of submerged land, relative to default height, a spot is considered an ocean at.
-    public float oceanThreshold = 30;
+    public float oceanThreshold = 30f;
 
     // If stone should be generated under blocks with gravity.
     public bool fixGravityBlocks = true;
@@ -94,14 +91,4 @@ public class RiverConfig
 
     // Gravel on sides of river.
     public bool gravelBeaches = true;
-
-    // Better valleys.
-    public bool valleysV2 = false;
-
-    // Ignore story structures when generating ocean, for better ruins and speed.
-    // Will generate SIGNIFICANTLY faster (120s with better ruins, 30s vanilla, 4s with this on).
-    // The way oceans are generated is really stupid, I can't make total sense of it.
-    public bool ignoreStoryStructures = false;
-
-    public bool cacheZones = true;
 }

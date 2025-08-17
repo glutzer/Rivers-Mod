@@ -24,8 +24,11 @@ public class EntityBehaviorPhysicsPatch
         {
             if (entity is EntityPlayer)
             {
-                IWorldChunk chunk = entity.Api.World.BlockAccessor.GetChunk((int)pos.X / 32, 0, (int)pos.Z / 32);
-                float[]? flowVectors = chunk?.GetModdata<float[]>("flowVectors");
+                int chunkX = (int)pos.X / 32;
+                int chunkZ = (int)pos.Z / 32;
+
+                IWorldChunk chunk = entity.Api.World.BlockAccessor.GetChunk(chunkX, 0, chunkZ);
+                float[]? flowVectors = ModDataCache.GetFlowVectors(chunk, entity.Api, chunkX, chunkZ);
 
                 if (flowVectors != null)
                 {
@@ -51,9 +54,11 @@ public class EntityBehaviorPhysicsPatch
             {
                 float riverSpeed = RiversMod.RiverSpeed;
 
-                IWorldChunk chunk = __instance.Api.World.BlockAccessor.GetChunk((int)__instance.Pos.X / 32, 0, (int)__instance.Pos.Z / 32);
+                int chunkX = (int)__instance.Pos.X / 32;
+                int chunkZ = (int)__instance.Pos.Z / 32;
 
-                float[]? flowVectors = chunk?.GetModdata<float[]>("flowVectors");
+                IWorldChunk chunk = __instance.Api.World.BlockAccessor.GetChunk(chunkX, 0, chunkZ);
+                float[]? flowVectors = ModDataCache.GetFlowVectors(chunk, __instance.Api, chunkX, chunkZ);
 
                 if (flowVectors != null)
                 {

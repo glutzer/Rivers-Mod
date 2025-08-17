@@ -17,9 +17,9 @@ public partial class RBush<T>
     private List<T> DoSearch(in Envelope boundingBox)
     {
         if (!Root.Envelope.Intersects(boundingBox))
-            return new List<T>();
+            return [];
 
-        List<T> intersections = new();
+        List<T> intersections = [];
         Queue<Node> queue = new();
         queue.Enqueue(Root);
 
@@ -52,7 +52,7 @@ public partial class RBush<T>
     #region Insert
     private List<Node> FindCoveringArea(in Envelope area, int depth)
     {
-        List<Node> path = new();
+        List<Node> path = [];
         Node node = Root;
 
         while (true)
@@ -110,11 +110,11 @@ public partial class RBush<T>
     #region SplitNode
     private void SplitRoot(Node newNode)
     {
-        List<ISpatialData> items = new()
-        {
+        List<ISpatialData> items =
+        [
             Root,
             newNode
-        };
+        ];
 
         Root = new Node(items, Root.Height + 1);
     }
@@ -204,10 +204,10 @@ public partial class RBush<T>
     {
         if (data.Count <= maxEntries)
         {
-            List<ISpatialData> list = new()
-            {
+            List<ISpatialData> list =
+            [
                 BuildNodes(data, height - 1, _maxEntries)
-            };
+            ];
 
             return height == 1
                 ? new Node(data.Cast<ISpatialData>().ToList(), height)

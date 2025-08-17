@@ -13,7 +13,7 @@ public class GravityBlocksPass : ModStdWorldGen
 {
     public ICoreServerAPI sapi = null!;
 
-    public HashSet<int> unstableBlockIds = new();
+    public HashSet<int> unstableBlockIds = [];
 
     public override bool ShouldLoad(EnumAppSide side)
     {

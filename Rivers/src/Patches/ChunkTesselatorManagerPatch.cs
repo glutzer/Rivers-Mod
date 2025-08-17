@@ -7,6 +7,8 @@ namespace Rivers;
 
 public class ChunkTesselatorManagerPatch
 {
+    // Is chunk gen multi-threaded? This could fuck up.
+
     // Set this to use an extended version of the cache.
     [HarmonyPatch(typeof(ChunkTesselator), "Start")]
     [HarmonyPatchCategory("flow")]
@@ -30,7 +32,7 @@ public class ChunkTesselatorManagerPatch
         [HarmonyPrefix]
         public static bool Prefix(int chunkX, int chunkZ, ref ClientMain ___game)
         {
-            BottomChunk = ___game.GetField<ClientWorldMap>("WorldMap").CallAmbigMethod<ClientChunk>("GetClientChunk", new System.Type[] { typeof(int), typeof(int), typeof(int) }, chunkX, 0, chunkZ);
+            BottomChunk = ___game.GetField<ClientWorldMap>("WorldMap").CallAmbigMethod<ClientChunk>("GetClientChunk", [typeof(int), typeof(int), typeof(int)], chunkX, 0, chunkZ);
             return true;
         }
     }
@@ -55,7 +57,7 @@ public class ChunkTesselatorManagerPatch
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
         {
-            List<CodeInstruction> code = new(instructions);
+            List<CodeInstruction> code = [.. instructions];
             int insertionIndex = -1;
 
             for (int i = 4; i < code.Count - 4; i++)
@@ -67,8 +69,8 @@ public class ChunkTesselatorManagerPatch
                 }
             }
 
-            List<CodeInstruction> ins = new()
-            {
+            List<CodeInstruction> ins =
+            [
                 new CodeInstruction(OpCodes.Ldloc_1),
                 new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ChunkTesselator), "vars")),
                 new CodeInstruction(OpCodes.Ldarg_0),
@@ -76,7 +78,7 @@ public class ChunkTesselatorManagerPatch
                 new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldarg_3),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(ChunkTesselatorManagerPatch), "SetFlowVectors"))
-            };
+            ];
 
             if (insertionIndex != -1)
             {
@@ -93,7 +95,7 @@ public class ChunkTesselatorManagerPatch
 
         if (BottomChunk != null && !BottomChunk.Empty)
         {
-            varsTwo.flowVectors = BottomChunk.GetModdata<float[]>("flowVectors");
+            varsTwo.flowVectors = ModDataCache.GetFlowVectors(BottomChunk, game.api, chunkX, chunkZ);
             varsTwo.riverSpeed = RiversMod.RiverSpeed;
         }
 

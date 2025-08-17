@@ -12,7 +12,7 @@ public class River
 
     public Vector2d StartPos { get; private set; }
 
-    public List<RiverNode> nodes = new();
+    public List<RiverNode> nodes = [];
 
     public River(Vector2d startPos)
     {
@@ -24,11 +24,11 @@ public class River
     /// </summary>
     public void AssignRiverSizes()
     {
-        List<RiverNode> riverEndList = nodes.Where(river => river.end == true).ToList();
+        List<RiverNode> riverEndList = [.. nodes.Where(river => river.end == true)];
 
         foreach (RiverNode river in riverEndList)
         {
-            AssignRiverSize(river, 1);
+            AssignRiverSize(river, 1f);
         }
     }
 

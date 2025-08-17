@@ -13,7 +13,7 @@ public class GravelGen : ModStdWorldGen
 {
     public Noise gravelNoise = new(0, 0.01f, 2);
 
-    public Dictionary<int, int> gravelMappings = new();
+    public Dictionary<int, int> gravelMappings = [];
 
     public ICoreServerAPI sapi = null!;
     public IBlockAccessor blockAccessor = null!;

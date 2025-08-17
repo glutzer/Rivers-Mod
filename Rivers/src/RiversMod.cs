@@ -21,6 +21,8 @@ public class RiversMod : ModSystem
     public IClientNetworkChannel clientChannel = null!;
     public IServerNetworkChannel serverChannel = null!;
 
+    public ICoreAPI api = null!;
+
     public override double ExecuteOrder()
     {
         return 0;
@@ -64,6 +66,7 @@ public class RiversMod : ModSystem
     public override void StartPre(ICoreAPI api)
     {
         string cfgFileName = "rivers.json";
+        this.api = api;
 
 #if DEBUG
         api.StoreModConfig(RiverConfig.Loaded, cfgFileName);
@@ -94,9 +97,18 @@ public class RiversMod : ModSystem
         // Re-initialize values.
         ChunkTesselatorManagerPatch.BottomChunk = null!;
         BlockLayersPatches.Distances = null!;
-        ZoomPatch.Multiplier = 0;
+        ZoomPatch.Multiplier = 0f;
 
         Unpatch();
+
+        if (api.Side == EnumAppSide.Client)
+        {
+            ModDataCache.OnClientExit();
+        }
+        else
+        {
+            ModDataCache.OnServerExit();
+        }
     }
 
     public static void Patch()

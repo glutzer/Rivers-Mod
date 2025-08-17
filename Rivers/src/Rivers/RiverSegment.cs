@@ -16,7 +16,7 @@ public class RiverSegment : ISpatialData
     // May be orphaned.
     public RiverSegment? parent;
 
-    public List<RiverSegment> children = new();
+    public List<RiverSegment> children = [];
 
     // Curve differently when parent is at an invalid angle.
     public bool parentInvalid = false;

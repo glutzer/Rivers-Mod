@@ -75,13 +75,6 @@ public class DisableGenTerra
 
             if (landforms == null)
             {
-                //Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                //Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSSurvivalMod")!;
-                //Type type = survivalAssembly.GetType("Vintagestory.ServerMods.NoiseLandforms")!;
-                //MethodInfo method = type.GetMethod("LoadLandforms", BindingFlags.Public | BindingFlags.Static)!;
-
-                //// Invoke the static method with api as the first parameter.
-                //method.Invoke(null, new object[] { api });
                 return true;
             }
 
@@ -108,10 +101,12 @@ public class DisableGenTerra
             return method;
         }
 
+        /*
         [HarmonyPostfix]
         public static void Postfix(NoiseBase __instance, float scale)
         {
             __instance.SetField("scale", scale * RiverConfig.Loaded.landScaleMultiplier);
         }
+        */
     }
 }

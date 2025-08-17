@@ -384,7 +384,8 @@ public class NewGenTerra : ModStdWorldGen
             // This is the weight of the landforms for this block column.
             float[] columnLandformIndexedWeights = tempDataThreadLocal.Value.landformWeights;
             landLerpMap.WeightsAt(baseX + (localX * chunkPixelBlockStep), baseZ + (localZ * chunkPixelBlockStep), columnLandformIndexedWeights);
-            columnLandformIndexedWeights[^1] = 0f; // Set river landform weight to 0 by default.
+
+            // Octaves can be the same as the original landform. It looks too uniform when changing them.
 
             // Weight landform to river.
             if (riverLerp < 1f)
@@ -398,25 +399,31 @@ public class NewGenTerra : ModStdWorldGen
                 // Add inverse to river landform, which cannot naturally occur.
                 columnLandformIndexedWeights[riverIndex] += 1f - riverLerp;
 
-                for (int i = 0; i < lerpedAmps.Length; i++)
-                {
-                    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                //for (int i = 0; i < lerpedAmps.Length; i++)
+                //{
+                //    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                //    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
 
-                    lerpedAmps[i] *= riverLerp;
-                    lerpedThresh[i] *= riverLerp;
+                //    lerpedAmps[i] *= riverLerp;
+                //    lerpedThresh[i] *= riverLerp;
 
-                    lerpedAmps[i] += riverVariant.TerrainOctaves[i] * (1f - riverLerp);
-                    lerpedThresh[i] += riverVariant.TerrainOctaveThresholds[i] * (1f - riverLerp);
-                }
+                //    lerpedAmps[i] += riverVariant.TerrainOctaves[i] * (1f - riverLerp);
+                //    lerpedThresh[i] += riverVariant.TerrainOctaveThresholds[i] * (1f - riverLerp);
+                //}
             }
             else
             {
-                for (int i = 0; i < lerpedAmps.Length; i++)
-                {
-                    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                }
+                //for (int i = 0; i < lerpedAmps.Length; i++)
+                //{
+                //    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                //    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                //}
+            }
+
+            for (int i = 0; i < lerpedAmps.Length; i++)
+            {
+                lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
             }
 
             // Create a directional compression effect.

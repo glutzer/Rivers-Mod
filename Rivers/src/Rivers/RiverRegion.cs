@@ -29,10 +29,10 @@ public class RiverRegion
     public RiverZone[] zones;
 
     // All river starts in this region.
-    public List<RiverSegment> riverStarts = new();
+    public List<RiverSegment> riverStarts = [];
 
     // All separate rivers.
-    public List<River> rivers = new();
+    public List<River> rivers = [];
 
     // All segments in a tree for quickly fetching the ones needed for testing.
     public RBush<RiverSegment> segmentsForSampling = new();
@@ -112,27 +112,7 @@ public class RiverRegion
         GenMaps genMaps = sapi.ModLoader.GetModSystem<GenMaps>();
         int noiseSizeOcean = genMaps.GetField<int>("noiseSizeOcean");
 
-        if (RiverConfig.Loaded.cacheZones)
-        {
-            GetOrCreateZones(plateX, plateZ, () =>
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    for (int z = 0; z < width; z++)
-                    {
-                        RiverZone zone = zones[(z * config.zonesInRegion) + x] = new RiverZone(
-                            (x * config.zoneSize) + (config.zoneSize / 2),
-                            (z * config.zoneSize) + (config.zoneSize / 2),
-                            x,
-                            z);
-
-                        // This takes a really long time but I'm not going to figure out why.
-                        SetZoneOceanicity(zone, genMaps, noiseSizeOcean);
-                    }
-                }
-            });
-        }
-        else
+        GetOrCreateZones(plateX, plateZ, () =>
         {
             for (int x = 0; x < width; x++)
             {
@@ -148,13 +128,13 @@ public class RiverRegion
                     SetZoneOceanicity(zone, genMaps, noiseSizeOcean);
                 }
             }
-        }
+        });
 
         // Use BFS to get zone height based on distance to ocean tiles.
         Queue<RiverZone> queue = new();
-        HashSet<Vector2i> visited = new();
-        int[] dx = { -1, 1, 0, 0 };
-        int[] dy = { 0, 0, -1, 1 };
+        HashSet<Vector2i> visited = [];
+        int[] dx = [-1, 1, 0, 0];
+        int[] dy = [0, 0, -1, 1];
         for (int x = 0; x < width; x++)
         {
             for (int z = 0; z < width; z++)
@@ -259,8 +239,8 @@ public class RiverRegion
 
         // Now all nodes/segments have been generated, but not lakes.
 
-        List<RiverNode> endNodes = new();
-        List<River> smallRivers = new();
+        List<RiverNode> endNodes = [];
+        List<River> smallRivers = [];
 
         foreach (River river in rivers)
         {
@@ -450,7 +430,7 @@ public class RiverRegion
         };
 
         // Doesn't move.
-        lakeNode.speed = 0;
+        lakeNode.speed = 0f;
 
         parent.segments[config.segmentsInRiver - 1].children.Add(lakeNode.segments[0]);
 
@@ -465,7 +445,7 @@ public class RiverRegion
     /// </summary>
     public List<RiverZone> GetZonesAround(int localZoneX, int localZoneZ, int radius = 1)
     {
-        List<RiverZone> zonesListerino = new();
+        List<RiverZone> zonesListerino = [];
 
         for (int x = -radius; x <= radius; x++)
         {
@@ -519,43 +499,12 @@ public class RiverRegion
         MapLayerBase oceanGen = genMaps.GetField<MapLayerBase>("oceanGen");
         IntDataMap2D oceanMap;
 
-        if (RiverConfig.Loaded.ignoreStoryStructures)
+        try
         {
-            try
-            {
-                object parent = oceanGen.GetField<object>("parent");
-                List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
-                parent.SetField("requireLandAt", new List<XZ>());
+            object parent = oceanGen.GetField<object>("parent");
+            List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
+            parent.SetField("requireLandAt", new List<XZ>());
 
-                oceanMap = new()
-                {
-                    Size = noiseSizeOcean + (2 * oceanPadding),
-                    TopLeftPadding = oceanPadding,
-                    BottomRightPadding = oceanPadding,
-                    Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
-                        (regionZ * noiseSizeOcean) - oceanPadding,
-                        noiseSizeOcean + (2 * oceanPadding),
-                        noiseSizeOcean + (2 * oceanPadding))
-                };
-
-                parent.SetField("requireLandAt", requireLandAt);
-            }
-            catch // Ocean map has been changed to another field.
-            {
-                oceanMap = new()
-                {
-                    Size = noiseSizeOcean + (2 * oceanPadding),
-                    TopLeftPadding = oceanPadding,
-                    BottomRightPadding = oceanPadding,
-                    Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
-                    (regionZ * noiseSizeOcean) - oceanPadding,
-                    noiseSizeOcean + (2 * oceanPadding),
-                    noiseSizeOcean + (2 * oceanPadding))
-                };
-            }
-        }
-        else
-        {
             oceanMap = new()
             {
                 Size = noiseSizeOcean + (2 * oceanPadding),
@@ -565,6 +514,21 @@ public class RiverRegion
                     (regionZ * noiseSizeOcean) - oceanPadding,
                     noiseSizeOcean + (2 * oceanPadding),
                     noiseSizeOcean + (2 * oceanPadding))
+            };
+
+            parent.SetField("requireLandAt", requireLandAt);
+        }
+        catch // Ocean map has been changed to another field.
+        {
+            oceanMap = new()
+            {
+                Size = noiseSizeOcean + (2 * oceanPadding),
+                TopLeftPadding = oceanPadding,
+                BottomRightPadding = oceanPadding,
+                Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                (regionZ * noiseSizeOcean) - oceanPadding,
+                noiseSizeOcean + (2 * oceanPadding),
+                noiseSizeOcean + (2 * oceanPadding))
             };
         }
 

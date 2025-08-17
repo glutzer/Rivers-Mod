@@ -25,7 +25,7 @@ public class BlockLayersPatches
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
         {
-            List<CodeInstruction> code = new(instructions);
+            List<CodeInstruction> code = [.. instructions];
 
             int insertionIndex = -1;
             object xOperand = null!;
@@ -42,11 +42,11 @@ public class BlockLayersPatches
                 }
             }
 
-            List<CodeInstruction> ins = new()
-            {
+            List<CodeInstruction> ins =
+            [
                 new CodeInstruction(OpCodes.Ldloc_0),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BlockLayersPatches), "SetVectors"))
-            };
+            ];
 
             if (insertionIndex != -1)
             {
@@ -68,8 +68,8 @@ public class BlockLayersPatches
                 }
             }
 
-            ins = new()
-            {
+            ins =
+            [
                 new CodeInstruction(OpCodes.Ldloc_S, xOperand),
                 new CodeInstruction(OpCodes.Ldloc_S, zOperand),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BlockLayersPatches), "IsRiver")),
@@ -78,7 +78,7 @@ public class BlockLayersPatches
                 new CodeInstruction(OpCodes.Mul),
                 new CodeInstruction(OpCodes.Conv_I4),
                 new CodeInstruction(OpCodes.Stloc_S, seaLevelOperand)
-            };
+            ];
 
             if (insertionIndex != -1)
             {
@@ -104,6 +104,8 @@ public class BlockLayersPatches
     public static void SetVectors(IServerChunk[] chunks)
     {
         if (chunks == null) return;
+
+        // One deserialization per column, yeah could cache that too.
         Distances = chunks[0]?.MapChunk.GetModdata<ushort[]>("riverDistance");
     }
 

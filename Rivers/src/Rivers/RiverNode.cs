@@ -20,8 +20,8 @@ public class RiverNode : IEquatable<RiverNode>, ISpatialData
     public River river;
 
     // Size of the start and end of the river line.
-    public float endSize = 0;
-    public float startSize = 1;
+    public float endSize = 0f;
+    public float startSize = 1f;
 
     // If this has no children.
     public bool end = true;
@@ -30,7 +30,7 @@ public class RiverNode : IEquatable<RiverNode>, ISpatialData
     public RiverSegment[] segments;
 
     // Speed of which water moves through this river.
-    public float speed = 1;
+    public float speed = 1f;
 
     public bool isLake = false;
 
