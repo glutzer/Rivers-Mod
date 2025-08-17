@@ -7,14 +7,15 @@ namespace Rivers;
 
 public class RiverLandform
 {
-    private readonly float riverHeight = 0.05f;
+    // How many blocks above sea level the river edge should be.
+    private readonly float riverHeight = 0.23f;
     private readonly int mapSizeY;
 
     private readonly float[] startYKeyPositions;
     private readonly float[] riverYKeyPositions;
 
     private readonly ThreadLocal<float[]> lerpedYKeyPositionsTL;
-    private readonly ThreadLocal<float[]> columnThresholdsOutTL;
+    public readonly ThreadLocal<float[]> columnThresholdsOutTL;
 
     private readonly float[] variantThresholds;
 
@@ -36,8 +37,12 @@ public class RiverLandform
 
         variantThresholds = variant.TerrainYKeyThresholds;
 
+        // Position of sea level.
         float seaLevelPos = 110 / 256f;
+
+        // Lowest point where nothing is guaranteed.
         float lowestZeroPos = 1f;
+
         float heightModifier = 256f / mapSizeY;
         riverHeight *= heightModifier;
 
@@ -50,9 +55,9 @@ public class RiverLandform
             break;
         }
 
-        lowestZeroPos = Math.Max(lowestZeroPos, seaLevelPos + 0.02f);
-
         float distanceAboveSeaLevel = lowestZeroPos - seaLevelPos;
+        
+        // What to multiply everything by to have the high height reach the river level.
         float heightMultiplier = riverHeight / distanceAboveSeaLevel;
 
         for (int i = 0; i < startYKeyPositions.Length; i++)
@@ -72,14 +77,14 @@ public class RiverLandform
     /// <summary>
     /// Get the values required for lerping a point in a river.
     /// </summary>
-    public float[] GetValuesForLerpLevel(float riverLerp)
+    public void ComputeThresholds(float riverLerp)
     {
         float[] lerpedYKeyPositions = lerpedYKeyPositionsTL.Value!;
         float[] columnThresholdsOut = columnThresholdsOutTL.Value!;
 
         for (int i = 0; i < startYKeyPositions.Length; i++)
         {
-            lerpedYKeyPositions[i] = GameMath.Lerp(startYKeyPositions[i], riverYKeyPositions[i], riverLerp);
+            lerpedYKeyPositions[i] = GameMath.Lerp(riverYKeyPositions[i], startYKeyPositions[i], riverLerp);
         }
 
         float lastThreshold = 1f;
@@ -119,7 +124,5 @@ public class RiverLandform
 
             columnThresholdsOut[i] = 1f - GameMath.Lerp(lastThreshold, nextThreshold, t);
         }
-
-        return columnThresholdsOut;
     }
 }

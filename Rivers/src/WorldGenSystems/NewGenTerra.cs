@@ -251,7 +251,6 @@ public class NewGenTerra : ModStdWorldGen
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX + chunkPixelSize, baseZ, landformWeights), out double[] octNoiseX1, out double[] octThX1);
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX, baseZ + chunkPixelSize, landformWeights), out double[] octNoiseX2, out double[] octThX2);
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX + chunkPixelSize, baseZ + chunkPixelSize, landformWeights), out double[] octNoiseX3, out double[] octThX3);
-        float[][] terrainYThresholds = this.terrainYThresholds;
 
         // Store height map in the map chunk.
         ushort[] rainHeightMap = chunks[0].MapChunk.RainHeightMap;
@@ -383,6 +382,16 @@ public class NewGenTerra : ModStdWorldGen
 
             float distortedPosYSlide = distY - (int)Math.Floor(distY); // This value will be unchanged throughout the posY loop.
 
+            // Precompute new thresholds.
+            if (riverLerp < 1f)
+            {
+                for (int i = 0; i < riverYThresholds.Length; i++)
+                {
+                    if (columnLandformIndexedWeights[i] == 0f) continue; // Not used.
+                    riverYThresholds[i].ComputeThresholds(riverLerp);
+                }
+            }
+
             for (int posY = 1; posY <= mapSizeYm2; posY++)
             {
                 // Setup a lerp between threshold values, so that distortY can be applied continuously there.
@@ -391,15 +400,23 @@ public class NewGenTerra : ModStdWorldGen
                 // Value starts as the landform y threshold.
                 double threshold = 0;
 
-                for (int i = 0; i < columnLandformIndexedWeights.Length; i++)
+                if (riverLerp < 1f)
                 {
-                    float weight = columnLandformIndexedWeights[i];
-                    if (weight == 0) continue;
-
-                    // Sample the two values to lerp between. The value of distortedPosYBase is clamped in such a way that this always works.
-                    // Underflow and overflow of distortedPosY result in linear extrapolation.
-
-                    threshold += weight * ContinueSampleDisplacedYThreshold(distortedPosYBase, distortedPosYSlide, terrainYThresholds[i]);
+                    for (int i = 0; i < columnLandformIndexedWeights.Length; i++)
+                    {
+                        float weight = columnLandformIndexedWeights[i];
+                        if (weight == 0f) continue;
+                        threshold += weight * ContinueSampleDisplacedYThreshold(distortedPosYBase, distortedPosYSlide, riverYThresholds[i].columnThresholdsOutTL.Value!);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < columnLandformIndexedWeights.Length; i++)
+                    {
+                        float weight = columnLandformIndexedWeights[i];
+                        if (weight == 0f) continue;
+                        threshold += weight * ContinueSampleDisplacedYThreshold(distortedPosYBase, distortedPosYSlide, terrainYThresholds[i]);
+                    }
                 }
 
                 // Geo upheaval modifier for threshold.
