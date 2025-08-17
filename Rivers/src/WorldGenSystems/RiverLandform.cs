@@ -8,7 +8,7 @@ namespace Rivers;
 public class RiverLandform
 {
     // How many blocks above sea level the river edge should be.
-    private readonly float riverHeight = 0.23f;
+    private readonly float riverHeight = 0.03f;
     private readonly int mapSizeY;
 
     private readonly float[] startYKeyPositions;

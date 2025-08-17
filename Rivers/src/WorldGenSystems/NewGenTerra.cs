@@ -347,6 +347,7 @@ public class NewGenTerra : ModStdWorldGen
                 }
             }
 
+
             BitArray columnBlockSolidities = columnResults[chunkIndex2d].columnBlockSolidities;
             columnBlockSolidities.SetAll(false);
 
@@ -356,6 +357,12 @@ public class NewGenTerra : ModStdWorldGen
             // This is the weight of the landforms for this block column.
             float[] columnLandformIndexedWeights = tempDataThreadLocal.Value.landformWeights;
             landLerpMap.WeightsAt(baseX + (localX * chunkPixelBlockStep), baseZ + (localZ * chunkPixelBlockStep), columnLandformIndexedWeights);
+
+            for (int i = 0; i < lerpedAmps.Length; i++)
+            {
+                lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+            }
 
             // Create a directional compression effect.
             Vector2d dist = NewDistortionNoise(worldX, worldZ);
