@@ -47,7 +47,7 @@ public class GeneratePartialFeatures : WorldGenPartial
         // Load config into the system base.
         LoadGlobalConfig(sapi);
 
-        if (loaded) return; // UHh it inits when doing wgen regen.
+        if (loaded) return; // Uhh it inits when doing wgen regen.
         loaded = true;
 
         FeatureRiverBoulder riverBoulder = new(sapi)
