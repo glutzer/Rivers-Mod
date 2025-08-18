@@ -462,7 +462,7 @@ public class NewGenTerra : ModStdWorldGen
                 for (int i = 0; i < columnLandformIndexedWeights.Length; i++)
                 {
                     float weight = columnLandformIndexedWeights[i];
-                    if (weight == 0) continue;
+                    if (weight == 0f) continue;
 
                     // Sample the two values to lerp between. The value of distortedPosYBase is clamped in such a way that this always works.
                     // Underflow and overflow of distortedPosY result in linear extrapolation.

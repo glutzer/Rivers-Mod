@@ -14,12 +14,12 @@ public static class ModDataCache
 
     public static void OnClientExit()
     {
-
+        clientFlowCache.Clear();
     }
 
     public static void OnServerExit()
     {
-
+        serverFlowCache.Clear();
     }
 
     public static float[]? GetFlowVectors(IWorldChunk chunk, ICoreAPI api, int chunkX, int chunkZ)
@@ -43,6 +43,8 @@ public static class ModDataCache
             }
 
             flowVectors = chunk.GetModdata<float[]>("flowVectors");
+            if (flowVectors == null) return null;
+
             cache[coords] = flowVectors;
             return flowVectors;
         }
