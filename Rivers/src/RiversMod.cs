@@ -59,12 +59,16 @@ public class RiversMod : ModSystem
         serverChannel.SendPacket(new SpeedMessage() { riverSpeed = RiverConfig.Loaded.riverSpeed, flowDisabled = RiverConfig.Loaded.disableFlow }, byPlayer);
     }
 
-    public static void OnSpeedMessage(SpeedMessage message)
+    public void OnSpeedMessage(SpeedMessage message)
     {
         RiverSpeed = message.riverSpeed;
         ClientFlowDisabled = message.flowDisabled;
 
-        Patch();
+        // Check if singleplayer.
+        if (api is ICoreClientAPI capi && !capi.IsSinglePlayer)
+        {
+            RePatchFlow();
+        }
     }
 
     public override void StartPre(ICoreAPI api)
@@ -93,12 +97,6 @@ public class RiversMod : ModSystem
         }
 #endif
 
-        if (api is ICoreClientAPI capi && !capi.IsSinglePlayer)
-        {
-            // Don't patch until the message has been received on a dedicated server.
-            return;
-        }
-
         Patch();
     }
 
@@ -118,6 +116,18 @@ public class RiversMod : ModSystem
         else
         {
             ModDataCache.OnServerExit();
+        }
+    }
+
+    public static void RePatchFlow()
+    {
+        if (Harmony == null) return;
+
+        Harmony.UnpatchCategory("flow");
+
+        if (!ClientFlowDisabled)
+        {
+            Harmony.PatchCategory("flow");
         }
     }
 
