@@ -28,6 +28,8 @@ public class EntityBehaviorPhysicsPatch
                 int chunkZ = (int)pos.Z / 32;
 
                 IWorldChunk chunk = entity.Api.World.BlockAccessor.GetChunk(chunkX, 0, chunkZ);
+                if (chunk == null) return true;
+
                 float[]? flowVectors = ModDataCache.GetFlowVectors(chunk, entity.Api, chunkX, chunkZ);
 
                 if (flowVectors != null)
@@ -58,6 +60,8 @@ public class EntityBehaviorPhysicsPatch
                 int chunkZ = (int)__instance.Pos.Z / 32;
 
                 IWorldChunk chunk = __instance.Api.World.BlockAccessor.GetChunk(chunkX, 0, chunkZ);
+                if (chunk == null) return;
+
                 float[]? flowVectors = ModDataCache.GetFlowVectors(chunk, __instance.Api, chunkX, chunkZ);
 
                 if (flowVectors != null)
