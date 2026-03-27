@@ -118,6 +118,12 @@ public class BlockLayersPatches
     {
         if (chunks == null) return;
 
+        if (!RiversApi.ApplyBlockLayerPatches)
+        {
+            Distances = null;
+            return;
+        }
+
         // One deserialization per column, yeah could cache that too.
         Distances = chunks[0]?.MapChunk.GetModdata<ushort[]>("riverDistance");
     }

@@ -50,9 +50,9 @@ public class GravelGen : ModStdWorldGen
 
         foreach (RockStratum stratum in rockStrata.Variants)
         {
-            int stratumId = sapi.World.GetBlock(stratum.BlockCode).BlockId;
+            int stratumId = sapi.World.GetBlock(stratum.BlockCode)?.BlockId ?? 0;
 
-            if (gravelMappings.ContainsKey(stratumId)) continue;
+            if (gravelMappings.ContainsKey(stratumId) || stratumId == 0) continue;
 
             // No gravel for kimberlite/phyllite.
             int gravelId = sapi.World.GetBlock(new AssetLocation("gravel-" + stratum.BlockCode.ToString().Split('-')[1]))?.BlockId ?? stratumId;
@@ -81,12 +81,12 @@ public class GravelGen : ModStdWorldGen
         int startX = chunkX * 32;
         int startZ = chunkZ * 32;
 
-        ushort[] riverDistance = mapChunk.GetModdata<ushort[]>("riverDistance");
-        int[] topRocks = mapChunk.TopRockIdMap;
-        ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
+        ushort[]? riverDistance = mapChunk.GetModdata<ushort[]>("riverDistance");
+        int[]? topRocks = mapChunk.TopRockIdMap;
+        ushort[]? heightMap = mapChunk.WorldGenTerrainHeightMap;
 
         // If this chunk doesn't have river distance, it's outside of the range needed to generate gravel.
-        if (riverDistance == null) return;
+        if (riverDistance == null || topRocks == null || heightMap == null) return;
 
         for (int x = 0; x < 32; x++)
         {

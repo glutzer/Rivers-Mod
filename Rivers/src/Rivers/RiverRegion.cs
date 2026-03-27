@@ -51,7 +51,7 @@ public class RiverRegion
 
         Vector2d chunkEnd = chunkStart + new Vector2d(32);
 
-        return segmentsForSampling.Search(new Envelope(chunkStart.X, chunkStart.Y, chunkEnd.X, chunkEnd.Y)).ToArray();
+        return [.. segmentsForSampling.Search(new Envelope(chunkStart.X, chunkStart.Y, chunkEnd.X, chunkEnd.Y))];
     }
 
     public RiverRegion(ICoreServerAPI sapi, int plateX, int plateZ)
@@ -365,7 +365,7 @@ public class RiverRegion
 
         // Create envelope for testing R-tree.
 
-        List<RiverNode> overlappingSegments = paddedNodeBounds.Search(RiverNode.GetEnvelope(startPos, endPos)).ToList();
+        List<RiverNode> overlappingSegments = [.. paddedNodeBounds.Search(RiverNode.GetEnvelope(startPos, endPos))];
         foreach (RiverNode overlappingNode in overlappingSegments)
         {
             if (overlappingNode.river != river) return false; // Too close to another river, return.

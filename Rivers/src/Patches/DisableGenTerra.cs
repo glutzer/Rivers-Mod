@@ -1,10 +1,6 @@
 ﻿using HarmonyLib;
-using System;
-using System.Linq;
-using System.Reflection;
 using Vintagestory.API.Server;
 using Vintagestory.ServerMods;
-using Vintagestory.ServerMods.NoObf;
 
 namespace Rivers;
 
@@ -18,6 +14,8 @@ public class DisableGenTerra
         [HarmonyPrefix]
         public static bool Prefix(GenTerra __instance, ICoreServerAPI api)
         {
+            if (RiversApi.TurnOffGeneration) return true;
+
             __instance.SetField("api", api);
             return false;
         }
@@ -31,6 +29,8 @@ public class DisableGenTerra
         [HarmonyPrefix]
         public static bool Prefix(GenTerra __instance)
         {
+            if (RiversApi.TurnOffGeneration) return true;
+
             // Forward original init to the new one...
             // In the new one, make sure it's ok to call everything when doing /wgen regen.
             ICoreServerAPI api = __instance.GetField<ICoreServerAPI>("api");
@@ -43,70 +43,45 @@ public class DisableGenTerra
     /// <summary>
     /// Changes the landform reload to only reload IF the landforms have not been loaded yet.
     /// </summary>
-    [HarmonyPatch]
-    [HarmonyPatchCategory("core")]
-    public static class BrokenReload
-    {
-        public static MethodBase TargetMethod()
-        {
-            // Get all assemblies.
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+    //[HarmonyPatch]
+    //[HarmonyPatchCategory("core")]
+    //public static class BrokenReload
+    //{
+    //    public static MethodBase TargetMethod()
+    //    {
+    //        // Get all assemblies.
+    //        Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-            Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSEssentials")!;
-            Type type = survivalAssembly.GetType("Vintagestory.ServerMods.NoiseLandforms")!;
-            MethodInfo method = type.GetMethod("LoadLandforms", BindingFlags.Public | BindingFlags.Static)!;
-            return method;
-        }
+    //        Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSEssentials")!;
+    //        Type type = survivalAssembly.GetType("Vintagestory.ServerMods.NoiseLandforms")!;
+    //        MethodInfo method = type.GetMethod("LoadLandforms", BindingFlags.Public | BindingFlags.Static)!;
+    //        return method;
+    //    }
 
-        [HarmonyPrefix]
-        public static bool Prefix(ICoreServerAPI api)
-        {
-            Type landType = null!;
-            Type[] types = AccessTools.GetTypesFromAssembly(Assembly.GetAssembly(typeof(NoiseBase)));
-            foreach (Type type in types)
-            {
-                if (type.Name == "NoiseLandforms")
-                {
-                    landType = type;
-                    break;
-                }
-            }
-            LandformsWorldProperty landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
+    //    [HarmonyPrefix]
+    //    public static bool Prefix()
+    //    {
+    //        if (RiversApi.TurnOffGeneration) return true;
 
-            if (landforms == null)
-            {
-                return true;
-            }
+    //        Type landType = null!;
+    //        Type[] types = AccessTools.GetTypesFromAssembly(Assembly.GetAssembly(typeof(NoiseBase)));
+    //        foreach (Type type in types)
+    //        {
+    //            if (type.Name == "NoiseLandforms")
+    //            {
+    //                landType = type;
+    //                break;
+    //            }
+    //        }
+    //        LandformsWorldProperty landforms = landType.GetStaticField<LandformsWorldProperty>("landforms");
 
-            // Don't call original method.
-            return false;
-        }
-    }
+    //        if (landforms == null)
+    //        {
+    //            return true;
+    //        }
 
-    [HarmonyPatch]
-    [HarmonyPatchCategory("core")]
-    public static class ScalePatch
-    {
-        public static MethodBase TargetMethod()
-        {
-            // Get all assemblies.
-            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSEssentials")!;
-            Type type = survivalAssembly.GetType("Vintagestory.ServerMods.NoiseOcean")!;
-
-            // Get the constructor method.
-            ConstructorInfo method = type.GetConstructor([typeof(long), typeof(float), typeof(float)])!;
-
-            return method;
-        }
-
-        /*
-        [HarmonyPostfix]
-        public static void Postfix(NoiseBase __instance, float scale)
-        {
-            __instance.SetField("scale", scale * RiverConfig.Loaded.landScaleMultiplier);
-        }
-        */
-    }
+    //        // Don't call original method.
+    //        return false;
+    //    }
+    //}
 }

@@ -26,13 +26,13 @@ public class RiversMod : ModSystem
 
     public override double ExecuteOrder()
     {
-        return 0;
+        return 5;
     }
 
     public override void StartClientSide(ICoreClientAPI api)
     {
         clientChannel = api.Network.RegisterChannel("rivers")
-            .RegisterMessageType(typeof(SpeedMessage))
+            .RegisterMessageType<SpeedMessage>()
             .SetMessageHandler<SpeedMessage>(OnSpeedMessage);
 
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -43,7 +43,7 @@ public class RiversMod : ModSystem
     public override void StartServerSide(ICoreServerAPI api)
     {
         serverChannel = api.Network.RegisterChannel("rivers")
-            .RegisterMessageType(typeof(SpeedMessage));
+            .RegisterMessageType<SpeedMessage>();
 
 #pragma warning disable CS0618 // Type or member is obsolete
         api.RegisterCommand(new RiverDebugCommand(api));
@@ -205,7 +205,7 @@ public class RiverDebugCommand : ServerChatCommand
     {
         try
         {
-            if (sapi.ModLoader.GetModSystem<WorldMapManager>().MapLayers.FirstOrDefault((MapLayer ml) => ml is WaypointMapLayer) is not WaypointMapLayer wp) return;
+            if (sapi.ModLoader.GetModSystem<WorldMapManager>().MapLayers.FirstOrDefault(ml => ml is WaypointMapLayer) is not WaypointMapLayer wp) return;
 
             int worldX = (int)player.Entity.Pos.X;
             int worldZ = (int)player.Entity.Pos.Z;

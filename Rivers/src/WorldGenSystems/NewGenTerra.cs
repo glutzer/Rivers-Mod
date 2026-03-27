@@ -45,8 +45,6 @@ public class NewGenTerra : ModStdWorldGen
 
     // River fields.
     public int AboveSeaLevel => sapi.WorldManager.MapSizeY - TerraGenConfig.seaLevel;
-    public Noise valleyNoise = new(0, 0.0008f, 2);
-    public Noise floorNoise = new(0, 0.0008f, 1);
 
     private const int chunkSize = 32;
     public const double terrainDistortionMultiplier = 4;
@@ -64,7 +62,7 @@ public class NewGenTerra : ModStdWorldGen
     public float[][] terrainYThresholds = null!;
 
     public int riverIndex;
-    public LandformVariant riverVariant;
+    public LandformVariant? riverVariant;
 
     // Initialized in InitWorldGen.
     public NewNormalizedSimplexFractalNoise terrainNoise = null!;
@@ -86,16 +84,7 @@ public class NewGenTerra : ModStdWorldGen
 
     public NewGenTerra()
     {
-        riverVariant = new LandformVariant
-        {
-            Weight = 0,
-            Code = "riverlandform",
-            TerrainOctaves = [0, 0, 0, 0, 0, 1, 0, 0, 0],
-            TerrainOctaveThresholds = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            TerrainYKeyPositions = [0.43f, 0.44f, 0.45f, 0.46f],
-            TerrainYKeyThresholds = [1.000f, 0.500f, 0.250f, 0.000f],
-            HexColor = "#79E02E"
-        };
+
     }
 
     public override void StartServerSide(ICoreServerAPI api)
@@ -221,22 +210,8 @@ public class NewGenTerra : ModStdWorldGen
 
         riverIndex = terrainYThresholds.Length - 1; // The last index is the river landform.
 
-        // Set river variant.
-        float modifier = 256f / sapi.WorldManager.MapSizeY;
-
-        float seaLevelThreshold = 0.4313725490196078f;
-        float blockThreshold = seaLevelThreshold / 110f * modifier;
-
-        riverVariant.TerrainYKeyPositions[0] = seaLevelThreshold; // 100% chance to be atleast sea level.
-        riverVariant.TerrainYKeyPositions[1] = seaLevelThreshold + (blockThreshold * 4f); // 50% chance to be atleast 4 blocks above sea level.
-        riverVariant.TerrainYKeyPositions[2] = seaLevelThreshold + (blockThreshold * 9f); // 25% chance to be atleast 6 blocks above sea level.
-        riverVariant.TerrainYKeyPositions[3] = seaLevelThreshold + (blockThreshold * 15f); // 0% chance to be astleast 10 blocks above sea level.
-        riverVariant.Init(sapi.WorldManager, 0);
-
-        // Re-lerp with adjusted heights.
-        riverVariant.CallMethod("LerpThresholds", sapi.WorldManager.MapSizeY);
-
-        terrainYThresholds[riverIndex] = riverVariant.TerrainYThresholds;
+        riverVariant = RiversApi.Instance?.CreateRiverVariant();
+        terrainYThresholds[riverIndex] = riverVariant!.TerrainYThresholds;
     }
 
     private void OnChunkColumnGen(IChunkColumnGenerateRequest request)
@@ -357,7 +332,7 @@ public class NewGenTerra : ModStdWorldGen
             if (sample.riverDistance < maxValleyWidth)
             {
                 // Get raw perlin noise.
-                double valley = valleyNoise.GetNoise(worldX, worldZ);
+                double valley = RiversApi.valleyNoise.GetNoise(worldX, worldZ);
 
                 // Gain for faster transitions.
                 valley = Math.Clamp(valley * riverConfig.noiseExpansion, -1, 1);
