@@ -52,7 +52,7 @@ public class DisableGenTerra
             // Get all assemblies.
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-            Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSSurvivalMod")!;
+            Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSEssentials")!;
             Type type = survivalAssembly.GetType("Vintagestory.ServerMods.NoiseLandforms")!;
             MethodInfo method = type.GetMethod("LoadLandforms", BindingFlags.Public | BindingFlags.Static)!;
             return method;
@@ -92,11 +92,11 @@ public class DisableGenTerra
             // Get all assemblies.
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-            Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSSurvivalMod")!;
+            Assembly survivalAssembly = assemblies.FirstOrDefault(assembly => assembly.GetName().Name == "VSEssentials")!;
             Type type = survivalAssembly.GetType("Vintagestory.ServerMods.NoiseOcean")!;
 
             // Get the constructor method.
-            ConstructorInfo method = type.GetConstructor(new Type[] { typeof(long), typeof(float), typeof(float) })!;
+            ConstructorInfo method = type.GetConstructor([typeof(long), typeof(float), typeof(float)])!;
 
             return method;
         }

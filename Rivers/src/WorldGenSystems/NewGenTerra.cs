@@ -255,7 +255,11 @@ public class NewGenTerra : ModStdWorldGen
     {
         IMapChunk mapChunk = chunks[0].MapChunk;
 
-        int rockId = GlobalConfig.defaultRockId;
+        int rockId = GlobalConfig.GetInstance(sapi).defaultRockId;
+        int waterBlockId = GlobalConfig.GetInstance(sapi).waterBlockId;
+        int saltWaterBlockId = GlobalConfig.GetInstance(sapi).saltWaterBlockId;
+        int mantleBlockId = GlobalConfig.GetInstance(sapi).mantleBlockId;
+        int lakeIceBlockId = GlobalConfig.GetInstance(sapi).lakeIceBlockId;
 
         RiverConfig riverConfig = RiverConfig.Loaded;
 
@@ -398,26 +402,6 @@ public class NewGenTerra : ModStdWorldGen
 
                 // Add inverse to river landform, which cannot naturally occur.
                 columnLandformIndexedWeights[riverIndex] += 1f - riverLerp;
-
-                //for (int i = 0; i < lerpedAmps.Length; i++)
-                //{
-                //    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                //    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-
-                //    lerpedAmps[i] *= riverLerp;
-                //    lerpedThresh[i] *= riverLerp;
-
-                //    lerpedAmps[i] += riverVariant.TerrainOctaves[i] * (1f - riverLerp);
-                //    lerpedThresh[i] += riverVariant.TerrainOctaveThresholds[i] * (1f - riverLerp);
-                //}
-            }
-            else
-            {
-                //for (int i = 0; i < lerpedAmps.Length; i++)
-                //{
-                //    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                //    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                //}
             }
 
             for (int i = 0; i < lerpedAmps.Length; i++)
@@ -442,7 +426,7 @@ public class NewGenTerra : ModStdWorldGen
 
             float distY = oceanicity + ComputeOceanAndUpheavalDistY(upheavalStrength, worldX, worldZ, distGeo);
 
-            columnResults[chunkIndex2d].waterBlockId = oceanicity > 1f ? GlobalConfig.saltWaterBlockId : GlobalConfig.waterBlockId;
+            columnResults[chunkIndex2d].waterBlockId = oceanicity > 1f ? saltWaterBlockId : waterBlockId;
 
             // Prepare the noise for the entire column.
             NewNormalizedSimplexFractalNoise.ColumnNoise columnNoise = terrainNoise.ForColumn(verticalNoiseRelativeFrequency, lerpedAmps, lerpedThresh, worldX + distTerrain.X, worldZ + distTerrain.Y);
@@ -518,7 +502,7 @@ public class NewGenTerra : ModStdWorldGen
         IChunkBlocks chunkBlockData = chunks[0].Data;
 
         // First set all the fully solid layers in bulk, as much as possible.
-        chunkBlockData.SetBlockBulk(0, chunkSize, chunkSize, GlobalConfig.mantleBlockId);
+        chunkBlockData.SetBlockBulk(0, chunkSize, chunkSize, mantleBlockId);
         int yBase = 1;
         for (; yBase < mapSizeY - 1; yBase++)
         {
@@ -557,12 +541,12 @@ public class NewGenTerra : ModStdWorldGen
                 int waterId = columnResult.waterBlockId;
                 surfaceWaterId = waterId;
 
-                if (yBase < seaLevel && waterId != GlobalConfig.saltWaterBlockId && !columnResult.columnBlockSolidities[seaLevel - 1]) // Should surface water be lake ice? Relevant only for fresh water and only if this particular XZ column has a non-solid block at sea-level.
+                if (yBase < seaLevel && waterId != saltWaterBlockId && !columnResult.columnBlockSolidities[seaLevel - 1]) // Should surface water be lake ice? Relevant only for fresh water and only if this particular XZ column has a non-solid block at sea-level.
                 {
                     int temp = (GameMath.BiLerpRgbColor(localX * chunkBlockDelta, localZ * chunkBlockDelta, climateMapData.UpperLeft, climateMapData.UpperRight, climateMapData.BottomLeft, climateMapData.BottomRight) >> 16) & 0xFF;
                     float distort = (float)distort2dx.Noise((chunkX * chunkSize) + localX, worldZ) / 20f;
                     float tempF = Climate.GetScaledAdjustedTemperatureFloat(temp, 0) + distort;
-                    if (tempF < TerraGenConfig.WaterFreezingTempOnGen) surfaceWaterId = GlobalConfig.lakeIceBlockId;
+                    if (tempF < TerraGenConfig.WaterFreezingTempOnGen) surfaceWaterId = lakeIceBlockId;
                 }
 
                 terrainHeightMap[mapIndex] = (ushort)(yBase - 1); // Initially set the height maps to values reflecting the top of the fully solid layers.

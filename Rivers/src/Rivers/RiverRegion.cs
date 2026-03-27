@@ -377,7 +377,7 @@ public class RiverRegion
         river.nodes.Add(riverNode);
 
         // A node has come from this river so it's no longer an end.
-        if (parentNode != null) parentNode.end = false;
+        parentNode?.end = false;
 
         // Chance for a river to split into 2 rivers
         if (rand.NextFloat() < config.riverSplitChance && parentNode != null)

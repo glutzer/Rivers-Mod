@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using Vintagestory.API.MathTools;
 using Vintagestory.Client.NoObf;
@@ -8,6 +10,8 @@ namespace Rivers;
 
 public class LiquidTesselatorPatch
 {
+    public static float EnsureNonZeroSpeed(float speed) => speed == 0f ? 1f : speed;
+
     public static void TesselateFlow(float[] upFlowVectors, TCTCache vars)
     {
         TCTCacheTwo varsTwo = (TCTCacheTwo)vars;
@@ -28,6 +32,48 @@ public class LiquidTesselatorPatch
                 upFlowVectors[6] = xFlow;
                 upFlowVectors[7] = zFlow;
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(LiquidTesselator), "DrawLiquidBlockFace")]
+    [HarmonyPatchCategory("flow")]
+    public static class DrawLiquidBlockFaceTranspiler
+    {
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> code = [.. instructions];
+            MethodInfo mathMinMethod = AccessTools.Method(typeof(Math), "Min", [typeof(float), typeof(float)]);
+
+            for (int i = 0; i < code.Count - 1; i++)
+            {
+                if (code[i].Calls(mathMinMethod))
+                {
+                    CodeInstruction stloc = code[i + 1];
+                    if (stloc.opcode == OpCodes.Stloc_S || stloc.opcode == OpCodes.Stloc)
+                    {
+                        int insertAt = i + 2;
+                        OpCode ldlocOp = stloc.opcode == OpCodes.Stloc_S ? OpCodes.Ldloc_S : OpCodes.Ldloc;
+
+                        CodeInstruction ldloc = new(ldlocOp, stloc.operand);
+                        if (insertAt < code.Count)
+                        {
+                            ldloc.labels.AddRange(code[insertAt].labels);
+                            code[insertAt].labels.Clear();
+                        }
+
+                        code.InsertRange(insertAt,
+                        [
+                            ldloc,
+                            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(LiquidTesselatorPatch), "EnsureNonZeroSpeed")),
+                            new CodeInstruction(stloc.opcode, stloc.operand)
+                        ]);
+                        break;
+                    }
+                }
+            }
+
+            return code;
         }
     }
 
@@ -67,4 +113,6 @@ public class LiquidTesselatorPatch
             return code;
         }
     }
+
+
 }

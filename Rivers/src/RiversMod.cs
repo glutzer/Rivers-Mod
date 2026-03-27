@@ -133,12 +133,6 @@ public class RiversMod : ModSystem
         Harmony = new Harmony("rivers");
         Harmony.PatchCategory("core");
         Harmony.PatchCategory("flow");
-
-        // Always patch this...
-        //if (!RiverConfig.Loaded.disableFlow)
-        //{
-        //    Harmony.PatchCategory("flow");
-        //}
     }
 
     public static void Unpatch()

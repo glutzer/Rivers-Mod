@@ -6,8 +6,6 @@ public partial class RBush<T>
 {
     public class Node : ISpatialData
     {
-        private Envelope _envelope = null!;
-
         internal Node(List<ISpatialData> items, int height)
         {
             Height = height;
@@ -18,7 +16,7 @@ public partial class RBush<T>
         internal void Add(ISpatialData node)
         {
             Items.Add(node);
-            _envelope = Envelope.Extend(node.Envelope);
+            Envelope = Envelope.Extend(node.Envelope);
         }
 
         internal void Remove(ISpatialData node)
@@ -35,7 +33,7 @@ public partial class RBush<T>
 
         internal void ResetEnvelope()
         {
-            _envelope = GetEnclosingEnvelope(Items);
+            Envelope = GetEnclosingEnvelope(Items);
         }
 
         internal readonly List<ISpatialData> Items;
@@ -46,6 +44,6 @@ public partial class RBush<T>
 
         public bool IsLeaf => Height == 1;
 
-        public Envelope Envelope => _envelope;
+        public Envelope Envelope { get; private set; } = null!;
     }
 }

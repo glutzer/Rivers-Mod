@@ -1,8 +1,8 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
-using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 using Vintagestory.ServerMods;
 
@@ -27,65 +27,75 @@ public class BlockLayersPatches
         {
             List<CodeInstruction> code = [.. instructions];
 
-            int insertionIndex = -1;
-            object xOperand = null!;
-            object zOperand = null!;
+            MethodInfo setVectorsMethod = typeof(BlockLayersPatches).GetMethod(nameof(SetVectors))!;
+            MethodInfo getRiverPowerMethod = typeof(BlockLayersPatches).GetMethod(nameof(GetRiverPower))!;
+            MethodInfo mathMaxFloat = typeof(Math).GetMethod("Max", [typeof(float), typeof(float)])!;
 
-            for (int i = 4; i < code.Count - 4; i++)
+            // Scan for ldloc; ldc.i4.s 32; blt patterns to find loop variables.
+            // Scanning forward: first match = inner loop (j/z), second = outer loop (i/x).
+            List<CodeInstruction> loopVarLoads = [];
+            for (int k = 2; k < code.Count; k++)
             {
-                if (code[i].opcode == OpCodes.Newobj && code[i].operand == typeof(BlockPos).GetConstructor(Array.Empty<Type>()) && code[i + 1].opcode == OpCodes.Stloc_S && code[i + 2].opcode == OpCodes.Ldc_I4_0)
+                if ((code[k].opcode == OpCodes.Blt || code[k].opcode == OpCodes.Blt_S)
+                    && ((code[k - 1].opcode == OpCodes.Ldc_I4_S && Convert.ToInt32(code[k - 1].operand) == 32)
+                        || (code[k - 1].opcode == OpCodes.Ldc_I4 && (int)code[k - 1].operand == 32))
+                    && code[k - 2].IsLdloc())
                 {
-                    insertionIndex = i;
-                    xOperand = code[i + 3].operand;
-                    zOperand = code[i + 6].operand;
+                    loopVarLoads.Add(code[k - 2]);
+                }
+            }
+
+            // Patch 1: Insert SetVectors(chunks) after chunks local is stored at the start.
+            for (int k = 0; k < code.Count - 1; k++)
+            {
+                if (code[k].opcode == OpCodes.Callvirt
+                    && code[k].operand is MethodInfo chunksMi && chunksMi.Name == "get_Chunks"
+                    && code[k + 1].IsStloc())
+                {
+                    CodeInstruction loadChunks = StlocToLdloc(code[k + 1]);
+                    code.Insert(k + 2, loadChunks);
+                    code.Insert(k + 3, new CodeInstruction(OpCodes.Call, setVectorsMethod));
                     break;
                 }
             }
 
-            List<CodeInstruction> ins =
-            [
-                new CodeInstruction(OpCodes.Ldloc_0),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BlockLayersPatches), "SetVectors"))
-            ];
-
-            if (insertionIndex != -1)
+            // Patch 2: Multiply raise by GetRiverPower(i, j) after Math.Max(0f, (0.5f - rainRel) * 40f).
+            if (loopVarLoads.Count >= 2)
             {
-                code.InsertRange(insertionIndex, ins);
-            }
+                // loopVarLoads[0] = j/z (inner loop), loopVarLoads[1] = i/x (outer loop)
+                CodeInstruction loadI = new(loopVarLoads[1].opcode, loopVarLoads[1].operand);
+                CodeInstruction loadJ = new(loopVarLoads[0].opcode, loopVarLoads[0].operand);
 
-            //Second part
-
-            insertionIndex = -1;
-            object seaLevelOperand = null!;
-
-            for (int i = 4; i < code.Count - 4; i++)
-            {
-                if (code[i].opcode == OpCodes.Stloc_S && code[i - 1].opcode == OpCodes.Conv_I4 && code[i - 2].opcode == OpCodes.Call && code[i - 2].operand == AccessTools.Method(typeof(Math), "Min", new Type[] { typeof(float), typeof(float) }))
+                for (int k = 0; k < code.Count; k++)
                 {
-                    seaLevelOperand = code[i].operand;
-                    insertionIndex = i + 1;
-                    break;
+                    if (code[k].opcode == OpCodes.Call
+                        && code[k].operand is MethodInfo maxMi && maxMi == mathMaxFloat)
+                    {
+                        code.Insert(k + 1, loadI);
+                        code.Insert(k + 2, loadJ);
+                        code.Insert(k + 3, new CodeInstruction(OpCodes.Call, getRiverPowerMethod));
+                        code.Insert(k + 4, new CodeInstruction(OpCodes.Mul));
+                        break;
+                    }
                 }
-            }
-
-            ins =
-            [
-                new CodeInstruction(OpCodes.Ldloc_S, xOperand),
-                new CodeInstruction(OpCodes.Ldloc_S, zOperand),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(BlockLayersPatches), "IsRiver")),
-                new CodeInstruction(OpCodes.Ldloc_S, seaLevelOperand),
-                new CodeInstruction(OpCodes.Conv_R4),
-                new CodeInstruction(OpCodes.Mul),
-                new CodeInstruction(OpCodes.Conv_I4),
-                new CodeInstruction(OpCodes.Stloc_S, seaLevelOperand)
-            ];
-
-            if (insertionIndex != -1)
-            {
-                code.InsertRange(insertionIndex, ins);
             }
 
             return code;
+        }
+
+        private static CodeInstruction StlocToLdloc(CodeInstruction stloc)
+        {
+            return stloc.opcode == OpCodes.Stloc_0
+                ? new CodeInstruction(OpCodes.Ldloc_0)
+                : stloc.opcode == OpCodes.Stloc_1
+                ? new CodeInstruction(OpCodes.Ldloc_1)
+                : stloc.opcode == OpCodes.Stloc_2
+                ? new CodeInstruction(OpCodes.Ldloc_2)
+                : stloc.opcode == OpCodes.Stloc_3
+                ? new CodeInstruction(OpCodes.Ldloc_3)
+                : stloc.opcode == OpCodes.Stloc_S
+                ? new CodeInstruction(OpCodes.Ldloc_S, stloc.operand)
+                : new CodeInstruction(OpCodes.Ldloc, stloc.operand);
         }
     }
 
@@ -101,6 +111,9 @@ public class BlockLayersPatches
         }
     }
 
+    /// <summary>
+    /// Call this at the beginning of OnChunkColumnGeneration in GenBlockLayers.
+    /// </summary>
     public static void SetVectors(IServerChunk[] chunks)
     {
         if (chunks == null) return;
@@ -109,10 +122,12 @@ public class BlockLayersPatches
         Distances = chunks[0]?.MapChunk.GetModdata<ushort[]>("riverDistance");
     }
 
-    // Disable Y level boost in dry areas.
-    public static float IsRiver(int localX, int localZ)
+    /// <summary>
+    /// 0 power at the river bank, 1 far enough away that dry areas are normally boosted.
+    /// </summary>
+    public static float GetRiverPower(int localX, int localZ)
     {
-        if (Distances == null) return 1;
+        if (Distances == null) return 1f;
 
         ushort distance = Distances[(localZ * 32) + localX];
 
