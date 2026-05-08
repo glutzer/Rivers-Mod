@@ -6,7 +6,11 @@
     "sneeze"
   ],
   "description": "Standalone version of rivers.",
+<<<<<<< Updated upstream
   "version": "5.0.0",
+=======
+  "version": "5.0.1",
+>>>>>>> Stashed changes
   "dependencies": {
     "game": ""
   }

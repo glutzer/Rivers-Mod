@@ -36,10 +36,14 @@ public class BlockLayersPatches
             List<CodeInstruction> loopVarLoads = [];
             for (int k = 2; k < code.Count; k++)
             {
+<<<<<<< Updated upstream
                 if ((code[k].opcode == OpCodes.Blt || code[k].opcode == OpCodes.Blt_S)
                     && ((code[k - 1].opcode == OpCodes.Ldc_I4_S && Convert.ToInt32(code[k - 1].operand) == 32)
                         || (code[k - 1].opcode == OpCodes.Ldc_I4 && (int)code[k - 1].operand == 32))
                     && code[k - 2].IsLdloc())
+=======
+                if (code[i].opcode == OpCodes.Newobj && (MethodInfo)code[i].operand == typeof(BlockPos).GetConstructor(Array.Empty<Type>()) && code[i + 1].opcode == OpCodes.Stloc_S && code[i + 2].opcode == OpCodes.Ldc_I4_0)
+>>>>>>> Stashed changes
                 {
                     loopVarLoads.Add(code[k - 2]);
                 }
@@ -66,7 +70,18 @@ public class BlockLayersPatches
                 CodeInstruction loadI = new(loopVarLoads[1].opcode, loopVarLoads[1].operand);
                 CodeInstruction loadJ = new(loopVarLoads[0].opcode, loopVarLoads[0].operand);
 
+<<<<<<< Updated upstream
                 for (int k = 0; k < code.Count; k++)
+=======
+            //Second part
+
+            insertionIndex = -1;
+            object seaLevelOperand = null!;
+
+            for (int i = 4; i < code.Count - 4; i++)
+            {
+                if (code[i].opcode == OpCodes.Stloc_S && code[i - 1].opcode == OpCodes.Conv_I4 && code[i - 2].opcode == OpCodes.Call && (MethodInfo)code[i - 2].operand == AccessTools.Method(typeof(Math), "Min", new Type[] { typeof(float), typeof(float) }))
+>>>>>>> Stashed changes
                 {
                     if (code[k].opcode == OpCodes.Call
                         && code[k].operand is MethodInfo maxMi && maxMi == mathMaxFloat)

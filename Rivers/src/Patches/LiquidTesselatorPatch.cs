@@ -90,7 +90,7 @@ public class LiquidTesselatorPatch
 
             for (int i = 4; i < code.Count - 4; i++) // -1 since checking i + 1.
             {
-                if (code[i].opcode == OpCodes.Ldloc_S && code[i + 1].opcode == OpCodes.Ldnull && code[i + 2].opcode == OpCodes.Call && code[i + 2].operand == AccessTools.Method(typeof(Vec3i), "op_Inequality"))
+                if (code[i].opcode == OpCodes.Ldloc_S && code[i + 1].opcode == OpCodes.Ldnull && code[i + 2].opcode == OpCodes.Call && (MethodBase)code[i + 2].operand == AccessTools.Method(typeof(Vec3i), "op_Inequality"))
                 {
                     insertionIndex = i;
                     break;

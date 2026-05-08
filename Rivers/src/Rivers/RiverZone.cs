@@ -11,6 +11,7 @@ namespace Rivers;
 [ProtoContract(ImplicitFields = ImplicitFields.AllPublic)]
 public class RiverZone
 {
+#pragma warning disable CA2255
     [ModuleInitializer]
     internal static void Init()
     {
@@ -18,7 +19,7 @@ public class RiverZone
             .Add("X")
             .Add("Y");
     }
-
+#pragma warning restore CA2255
     // Center of region.
     public Vector2d localZoneCenterPosition;
 
