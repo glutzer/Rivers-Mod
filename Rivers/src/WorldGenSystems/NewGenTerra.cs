@@ -232,15 +232,7 @@ public class NewGenTerra : ModStdWorldGen
     {
         IMapChunk mapChunk = chunks[0].MapChunk;
 
-<<<<<<< Updated upstream
-        int rockId = GlobalConfig.GetInstance(sapi).defaultRockId;
-        int waterBlockId = GlobalConfig.GetInstance(sapi).waterBlockId;
-        int saltWaterBlockId = GlobalConfig.GetInstance(sapi).saltWaterBlockId;
-        int mantleBlockId = GlobalConfig.GetInstance(sapi).mantleBlockId;
-        int lakeIceBlockId = GlobalConfig.GetInstance(sapi).lakeIceBlockId;
-=======
         int rockId = globalConfig.defaultRockId;
->>>>>>> Stashed changes
 
         RiverConfig riverConfig = RiverConfig.Loaded;
 
@@ -407,11 +399,7 @@ public class NewGenTerra : ModStdWorldGen
 
             float distY = oceanicity + ComputeOceanAndUpheavalDistY(upheavalStrength, worldX, worldZ, distGeo);
 
-<<<<<<< Updated upstream
-            columnResults[chunkIndex2d].waterBlockId = oceanicity > 1f ? saltWaterBlockId : waterBlockId;
-=======
             columnResults[chunkIndex2d].waterBlockId = oceanicity > 1f ? globalConfig.saltWaterBlockId : globalConfig.waterBlockId;
->>>>>>> Stashed changes
 
             // Prepare the noise for the entire column.
             NewNormalizedSimplexFractalNoise.ColumnNoise columnNoise = terrainNoise.ForColumn(verticalNoiseRelativeFrequency, lerpedAmps, lerpedThresh, worldX + distTerrain.X, worldZ + distTerrain.Y);
@@ -487,11 +475,9 @@ public class NewGenTerra : ModStdWorldGen
         IChunkBlocks chunkBlockData = chunks[0].Data;
 
         // First set all the fully solid layers in bulk, as much as possible.
-<<<<<<< Updated upstream
-        chunkBlockData.SetBlockBulk(0, chunkSize, chunkSize, mantleBlockId);
-=======
+
         chunkBlockData.SetBlockBulk(0, chunkSize, chunkSize, globalConfig.mantleBlockId);
->>>>>>> Stashed changes
+
         int yBase = 1;
         for (; yBase < mapSizeY - 1; yBase++)
         {
@@ -530,20 +516,15 @@ public class NewGenTerra : ModStdWorldGen
                 int waterId = columnResult.waterBlockId;
                 surfaceWaterId = waterId;
 
-<<<<<<< Updated upstream
-                if (yBase < seaLevel && waterId != saltWaterBlockId && !columnResult.columnBlockSolidities[seaLevel - 1]) // Should surface water be lake ice? Relevant only for fresh water and only if this particular XZ column has a non-solid block at sea-level.
-=======
                 if (yBase < seaLevel && waterId != globalConfig.saltWaterBlockId && !columnResult.columnBlockSolidities[seaLevel - 1]) // Should surface water be lake ice? Relevant only for fresh water and only if this particular XZ column has a non-solid block at sea-level.
->>>>>>> Stashed changes
+
                 {
                     int temp = (GameMath.BiLerpRgbColor(localX * chunkBlockDelta, localZ * chunkBlockDelta, climateMapData.UpperLeft, climateMapData.UpperRight, climateMapData.BottomLeft, climateMapData.BottomRight) >> 16) & 0xFF;
                     float distort = (float)distort2dx.Noise((chunkX * chunkSize) + localX, worldZ) / 20f;
                     float tempF = Climate.GetScaledAdjustedTemperatureFloat(temp, 0) + distort;
-<<<<<<< Updated upstream
-                    if (tempF < TerraGenConfig.WaterFreezingTempOnGen) surfaceWaterId = lakeIceBlockId;
-=======
+
                     if (tempF < TerraGenConfig.WaterFreezingTempOnGen) surfaceWaterId = globalConfig.lakeIceBlockId;
->>>>>>> Stashed changes
+
                 }
 
                 terrainHeightMap[mapIndex] = (ushort)(yBase - 1); // Initially set the height maps to values reflecting the top of the fully solid layers.

@@ -33,20 +33,15 @@ public abstract class WorldGenPartial : WorldGenBase
                 }
                 else
                 {
-                    // Ensure neighbor chunks are loaded/accessible
-                    // Use GetChunkColumn first (non-blocking, returns null if not loaded)
-                    targetChunks = sapi.WorldManager.GetChunkColumn(targetChunkX, targetChunkZ);
+                    // Get individual chunk, not full column
+                    // Returns null if not loaded — check before use
+                    IServerChunk? chunk = sapi.WorldManager.GetChunk(targetChunkX, 0, targetChunkZ);
+                    if (chunk == null) continue;
 
-                    // If not available, try blocking load during worldgen
-                    if (targetChunks == null)
-                {
-                    // Only use BlockingLoadChunkColumn during worldgen phases before RunGame
-                    // This forces generation if needed
-                    targetChunks = sapi.WorldManager.BlockingLoadChunkColumn(targetChunkX, targetChunkZ);
+                    // Build minimal array for GeneratePartial
+                    targetChunks = new IServerChunk[] { chunk };
                 }
 
-                if (targetChunks == null) continue;
-                }
 
             GeneratePartial(targetChunks, chunkX, chunkZ, targetChunkX, targetChunkZ);
             }
