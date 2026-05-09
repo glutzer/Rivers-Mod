@@ -18,36 +18,9 @@ public abstract class WorldGenPartial : WorldGenBase
         int chunkX = request.ChunkX;
         int chunkZ = request.ChunkZ;
 
-        for (int i = -ChunkRange; i <= ChunkRange; i++)
-        {
-            for (int j = -ChunkRange; j <= ChunkRange; j++)
-            {
-                int targetChunkX = chunkX + i;
-                int targetChunkZ = chunkZ + j;
-
-                IServerChunk[] targetChunks;
-
-                if (i == 0 && j == 0)
-                {
-                    targetChunks = request.Chunks;
-                }
-                else
-                {
-                    // Get individual chunk, not full column
-                    // Returns null if not loaded — check before use
-                    IServerChunk? chunk = sapi.WorldManager.GetChunk(targetChunkX, 0, targetChunkZ);
-                    if (chunk == null) continue;
-
-                    // Build minimal array for GeneratePartial
-                    targetChunks = new IServerChunk[] { chunk };
-                }
-
-
-            GeneratePartial(targetChunks, chunkX, chunkZ, targetChunkX, targetChunkZ);
-            }
-        }
+        // ONLY process current chunk — moddata already contains river info
+        GeneratePartial(request.Chunks, chunkX, chunkZ, chunkX, chunkZ);
     }
-
 
     public virtual void GeneratePartial(IServerChunk[] chunks, int mainChunkX, int mainChunkZ, int generatingChunkX, int generatingChunkZ)
     {

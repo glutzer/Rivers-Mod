@@ -79,22 +79,12 @@ public class GeneratePartialFeatures : WorldGenPartial
     {
         chunkRand.InitPositionSeed(generatingChunkX, generatingChunkZ);
 
-        // FIX: Ensure map chunk exists before accessing it
         IMapChunk mapChunk = blockAccessor.GetMapChunk(generatingChunkX, generatingChunkZ);
 
-        if (mapChunk == null)
-        {
-            // Try to get or create the map chunk through the world manager
-            // This ensures terrain data exists for river generation
-            mapChunk = sapi.WorldManager.GetMapChunk(generatingChunkX, generatingChunkZ);
-
-            // If still null, this chunk column truly isn't ready — skip but don't break
-            if (mapChunk == null) return;
-        }
+        if (mapChunk == null) return;
 
         ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
         ushort[] riverDistanceMap = mapChunk.GetModdata<ushort[]>("riverDistance");
-
         if (riverDistanceMap == null) return;
         if (heightMap == null) return;
 
