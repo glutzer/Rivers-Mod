@@ -15,16 +15,11 @@ public abstract class WorldGenPartial : WorldGenBase
 
     public virtual void ChunkColumnGeneration(IChunkColumnGenerateRequest request)
     {
-        IServerChunk[] chunks = request.Chunks;
         int chunkX = request.ChunkX;
         int chunkZ = request.ChunkZ;
-        for (int i = -ChunkRange; i <= ChunkRange; i++)
-        {
-            for (int j = -ChunkRange; j <= ChunkRange; j++)
-            {
-                GeneratePartial(chunks, chunkX, chunkZ, chunkX + i, chunkZ + j);
-            }
-        }
+
+        // ONLY process current chunk — moddata already contains river info
+        GeneratePartial(request.Chunks, chunkX, chunkZ, chunkX, chunkZ);
     }
 
     public virtual void GeneratePartial(IServerChunk[] chunks, int mainChunkX, int mainChunkZ, int generatingChunkX, int generatingChunkZ)

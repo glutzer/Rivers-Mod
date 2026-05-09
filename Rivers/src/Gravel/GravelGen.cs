@@ -51,6 +51,7 @@ public class GravelGen : ModStdWorldGen
         foreach (RockStratum stratum in rockStrata.Variants)
         {
             int stratumId = sapi.World.GetBlock(stratum.BlockCode)?.BlockId ?? 0;
+            if (stratumId == 0) continue;  // Skip if block not found
 
             if (gravelMappings.ContainsKey(stratumId) || stratumId == 0) continue;
 

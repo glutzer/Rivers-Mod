@@ -1,5 +1,6 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using Vintagestory.Client.NoObf;
 
@@ -62,7 +63,7 @@ public class ChunkTesselatorManagerPatch
 
             for (int i = 4; i < code.Count - 4; i++)
             {
-                if (code[i].opcode == OpCodes.Ldloc_0 && code[i + 1].opcode == OpCodes.Ldc_I4_1 && code[i + 2].opcode == OpCodes.Stfld && code[i + 2].operand == AccessTools.Field(typeof(ClientChunk), "queuedForUpload"))
+                if (code[i].opcode == OpCodes.Ldloc_0 && code[i + 1].opcode == OpCodes.Ldc_I4_1 && code[i + 2].opcode == OpCodes.Stfld && (FieldInfo)code[i + 2].operand == AccessTools.Field(typeof(ClientChunk), "queuedForUpload"))
                 {
                     insertionIndex = i;
                     break;

@@ -48,13 +48,29 @@ public abstract class WorldGenBase : ModSystem
 
         globalConfig = api.Assets.Get("game:worldgen/global.json").ToObject<GlobalConfig>();
 
-        globalConfig.defaultRockId = api.World.GetBlock(globalConfig.defaultRockCode).BlockId;
-        globalConfig.waterBlockId = api.World.GetBlock(globalConfig.waterBlockCode).BlockId;
-        globalConfig.saltWaterBlockId = api.World.GetBlock(globalConfig.saltWaterBlockCode).BlockId;
-        globalConfig.lakeIceBlockId = api.World.GetBlock(globalConfig.lakeIceBlockCode).BlockId;
-        globalConfig.lavaBlockId = api.World.GetBlock(globalConfig.lavaBlockCode).BlockId;
-        globalConfig.basaltBlockId = api.World.GetBlock(globalConfig.basaltBlockCode).BlockId;
-        globalConfig.mantleBlockId = api.World.GetBlock(globalConfig.mantleBlockCode).BlockId;
+        Block? block;
+
+        block = api.World.GetBlock(globalConfig.defaultRockCode);
+        globalConfig.defaultRockId = block?.BlockId ?? 0;
+
+        block = api.World.GetBlock(globalConfig.waterBlockCode);
+        globalConfig.waterBlockId = block?.BlockId ?? 0;
+
+        block = api.World.GetBlock(globalConfig.saltWaterBlockCode);
+        globalConfig.saltWaterBlockId = block?.BlockId ?? 0;
+
+        block = api.World.GetBlock(globalConfig.lakeIceBlockCode);
+        globalConfig.lakeIceBlockId = block?.BlockId ?? 0;
+
+        block = api.World.GetBlock(globalConfig.lavaBlockCode);
+        globalConfig.lavaBlockId = block?.BlockId ?? 0;
+
+        block = api.World.GetBlock(globalConfig.basaltBlockCode);
+        globalConfig.basaltBlockId = block?.BlockId ?? 0;
+
+        block = api.World.GetBlock(globalConfig.mantleBlockCode);
+        globalConfig.mantleBlockId = block?.BlockId ?? 0;
+
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

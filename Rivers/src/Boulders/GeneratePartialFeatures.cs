@@ -81,10 +81,12 @@ public class GeneratePartialFeatures : WorldGenPartial
 
         IMapChunk mapChunk = blockAccessor.GetMapChunk(generatingChunkX, generatingChunkZ);
 
+        if (mapChunk == null) return;
+
         ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
         ushort[] riverDistanceMap = mapChunk.GetModdata<ushort[]>("riverDistance");
-
         if (riverDistanceMap == null) return;
+        if (heightMap == null) return;
 
         int startX = generatingChunkX * chunkSize;
         int startZ = generatingChunkZ * chunkSize;
