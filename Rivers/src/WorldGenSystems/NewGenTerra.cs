@@ -15,6 +15,7 @@ using Vintagestory.API.Util;
 using Vintagestory.ServerMods;
 using Vintagestory.ServerMods.NoObf;
 
+
 namespace Rivers;
 
 public struct WeightedTaper
@@ -257,6 +258,19 @@ public class NewGenTerra : ModStdWorldGen
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX + chunkPixelSize, baseZ, landformWeights), out double[] octNoiseX1, out double[] octThX1);
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX, baseZ + chunkPixelSize, landformWeights), out double[] octNoiseX2, out double[] octThX2);
         GetInterpolatedOctaves(landLerpMap.WeightsAt(baseX + chunkPixelSize, baseZ + chunkPixelSize, landformWeights), out double[] octNoiseX3, out double[] octThX3);
+
+        // Pre-compute river landform octave values once per chunk — they are constant since there is only one river variant.
+        double[] riverOctAmps = new double[terrainGenOctaves];
+        double[] riverOctThresh = new double[terrainGenOctaves];
+        if (riverVariant != null)
+        {
+            for (int i = 0; i < terrainGenOctaves; i++)
+            {
+                riverOctAmps[i] = riverVariant.TerrainOctaves[i];
+                riverOctThresh[i] = riverVariant.TerrainOctaveThresholds[i];
+            }
+        }
+
         float[][] terrainYThresholds = this.terrainYThresholds;
 
         // Store height map in the map chunk.
@@ -364,25 +378,38 @@ public class NewGenTerra : ModStdWorldGen
             float[] columnLandformIndexedWeights = tempDataThreadLocal.Value.landformWeights;
             landLerpMap.WeightsAt(baseX + (localX * chunkPixelBlockStep), baseZ + (localZ * chunkPixelBlockStep), columnLandformIndexedWeights);
 
-            // Octaves can be the same as the original landform. It looks too uniform when changing them.
-
-            // Weight landform to river.
+            // Blend Y-threshold weights and noise octave character toward the river landform using the same
+            // factor, so the noise amplitude/bias and the Y-height profile always transition in lock-step.
+            // Previously only the Y-thresholds were blended, leaving the noise with its original (e.g.
+            // mountainous) character throughout the valley and causing steep terrain at the boundary.
             if (riverLerp < 1f)
             {
-                // Multiply all landforms weights by river lerp.
+                float riverBlend = 1f - riverLerp;
+
+                // Scale all natural landform weights down and assign the remainder to the river landform.
                 for (int i = 0; i < columnLandformIndexedWeights.Length; i++)
                 {
                     columnLandformIndexedWeights[i] *= riverLerp;
                 }
+                columnLandformIndexedWeights[riverIndex] += riverBlend;
 
-                // Add inverse to river landform, which cannot naturally occur.
-                columnLandformIndexedWeights[riverIndex] += 1f - riverLerp;
+                // Blend noise octave amplitudes and thresholds toward the river landform's values so
+                // the noise character (amplitude and DC bias) matches the flatter river profile.
+                for (int i = 0; i < lerpedAmps.Length; i++)
+                {
+                    double naturalAmp = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                    double naturalThresh = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                    lerpedAmps[i] = GameMath.Lerp(naturalAmp, riverOctAmps[i], riverBlend);
+                    lerpedThresh[i] = GameMath.Lerp(naturalThresh, riverOctThresh[i], riverBlend);
+                }
             }
-
-            for (int i = 0; i < lerpedAmps.Length; i++)
+            else
             {
-                lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
-                lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                for (int i = 0; i < lerpedAmps.Length; i++)
+                {
+                    lerpedAmps[i] = GameMath.BiLerp(octNoiseX0[i], octNoiseX1[i], octNoiseX2[i], octNoiseX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                    lerpedThresh[i] = GameMath.BiLerp(octThX0[i], octThX1[i], octThX2[i], octThX3[i], localX * chunkBlockDelta, localZ * chunkBlockDelta);
+                }
             }
 
             // Create a directional compression effect.

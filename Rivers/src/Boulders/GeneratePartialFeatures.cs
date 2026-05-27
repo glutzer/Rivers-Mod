@@ -79,18 +79,21 @@ public class GeneratePartialFeatures : WorldGenPartial
     {
         chunkRand.InitPositionSeed(generatingChunkX, generatingChunkZ);
 
-        IMapChunk mapChunk = blockAccessor.GetMapChunk(generatingChunkX, generatingChunkZ);
+        IMapChunk? mapChunk = blockAccessor.GetMapChunk(generatingChunkX, generatingChunkZ);
+        if (mapChunk == null) return;
 
-        ushort[] heightMap = mapChunk.WorldGenTerrainHeightMap;
-        ushort[] riverDistanceMap = mapChunk.GetModdata<ushort[]>("riverDistance");
+        ushort[]? heightMap = mapChunk.WorldGenTerrainHeightMap;
+        ushort[]? riverDistanceMap = mapChunk.GetModdata<ushort[]>("riverDistance");
 
-        if (riverDistanceMap == null) return;
+        if (riverDistanceMap == null || heightMap == null) return;
 
         int startX = generatingChunkX * chunkSize;
         int startZ = generatingChunkZ * chunkSize;
 
         // Get 0-255 rain.
-        IntDataMap2D climateMap = mapChunk.MapRegion.ClimateMap;
+        IntDataMap2D? climateMap = mapChunk.MapRegion.ClimateMap;
+        if (climateMap == null || mapChunk.TopRockIdMap == null) return;
+
         int regionChunkSize = sapi.WorldManager.RegionSize / chunkSize;
         float cFac = (float)climateMap.InnerSize / regionChunkSize;
         int rlX = generatingChunkX % regionChunkSize;

@@ -166,13 +166,13 @@ public class RiversApi : ModSystem
         {
             for (int z = 0; z < 32; z++)
             {
-                int worldX = chunkX * 32 + x;
-                int worldZ = chunkZ * 32 + z;
+                int worldX = (chunkX * 32) + x;
+                int worldZ = (chunkZ * 32) + z;
                 int chunkIndex2d = ChunkMath.ChunkIndex2d(worldX % 32, worldZ % 32);
 
                 RiverSample sample = SampleRiver(worldX, worldZ, segmentsToTest, region);
 
-                samples[x + z * 32] = sample;
+                samples[x + (z * 32)] = sample;
 
                 if (sample.flowVectorX > -100f)
                 {

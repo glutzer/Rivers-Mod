@@ -69,7 +69,7 @@ public class RiverConfig
     public float topFactor = 1f;
 
     // Values relating to distortion of rivers.
-    public int riverOctaves = 2;
+    public int riverOctaves = 3;
     public float riverFrequency = 0.0075f;
     public float riverLacunarity = 3f;
     public float riverGain = 0.3f;
@@ -79,7 +79,7 @@ public class RiverConfig
     public float riverSpeed = 4f;
 
     // How wide a valley can be at world height.
-    public double maxValleyWidth = 75;
+    public double maxValleyWidth = 150;
 
     // How many blocks of submerged land, relative to default height, a spot is considered an ocean at.
     public float oceanThreshold = 30f;
