@@ -6,7 +6,7 @@
     "sneeze"
   ],
   "description": "Standalone version of rivers.",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "dependencies": {
     "game": ""
   }
