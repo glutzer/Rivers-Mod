@@ -7,7 +7,6 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
-using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
 namespace Rivers;
@@ -103,6 +102,7 @@ public class RiversMod : ModSystem
         ChunkTesselatorManagerPatch.BottomChunk = null!;
         BlockLayersPatches.Distances = null!;
         ZoomPatch.Multiplier = 0f;
+        RiverRegionCache.Clear();
 
         Unpatch();
 
@@ -217,10 +217,7 @@ public class RiverDebugCommand : ServerChatCommand
             int plateX = chunkX / chunksInPlate;
             int plateZ = chunkZ / chunksInPlate;
 
-            RiverRegion plate = ObjectCacheUtil.GetOrCreate(sapi, $"{plateX}-{plateZ}", () =>
-            {
-                return new RiverRegion(sapi, plateX, plateZ);
-            });
+            RiverRegion plate = RiverRegionCache.GetOrCreate(sapi, plateX, plateZ);
 
             Vector2d plateStart = plate.GlobalRegionStart;
 

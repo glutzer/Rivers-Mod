@@ -233,10 +233,7 @@ public class RiversApi : ModSystem
 
         int plateX = chunkX / riverConfig.ChunksInRegion;
         int plateZ = chunkZ / riverConfig.ChunksInRegion;
-        RiverRegion plate = ObjectCacheUtil.GetOrCreate(sapi, $"{plateX}-{plateZ}", () =>
-        {
-            return new RiverRegion(sapi, plateX, plateZ);
-        });
+        RiverRegion plate = RiverRegionCache.GetOrCreate(sapi, plateX, plateZ);
 
         return plate;
     }
@@ -280,5 +277,6 @@ public class RiversApi : ModSystem
 
         riverGenerator = null!;
         riverIndex = -1;
+        RiverRegionCache.Clear();
     }
 }

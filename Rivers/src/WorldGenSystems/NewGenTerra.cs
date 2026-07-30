@@ -11,10 +11,8 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
-using Vintagestory.API.Util;
 using Vintagestory.ServerMods;
 using Vintagestory.ServerMods.NoObf;
-
 
 namespace Rivers;
 
@@ -72,8 +70,12 @@ public class NewGenTerra : ModStdWorldGen
     public NormalizedSimplexNoise geoUpheavalNoise = null!;
 
     public ColumnResult[] columnResults = null!;
-    public bool[] layerFullySolid = null!; // We can't use BitArrays for these because code which writes to them is heavily multi-threaded; but anyhow they are only mapSizeY x 4 bytes.
-    public bool[] layerFullyEmpty = null!;
+
+    [ThreadStatic]
+    private static bool[]? layerFullySolid; // We can't use BitArrays for these because code which writes to them is heavily multi-threaded; but anyhow they are only mapSizeY x 4 bytes.
+    [ThreadStatic]
+    private static bool[]? layerFullyEmpty;
+
     public ThreadLocal<ThreadLocalTempData> tempDataThreadLocal = null!;
 
     public Type? landType;
@@ -185,8 +187,6 @@ public class NewGenTerra : ModStdWorldGen
         }
 
         columnResults = new ColumnResult[32 * 32];
-        layerFullyEmpty = new bool[sapi.WorldManager.MapSizeY];
-        layerFullySolid = new bool[sapi.WorldManager.MapSizeY];
 
         for (int i = 0; i < 32 * 32; i++)
         {
@@ -229,6 +229,9 @@ public class NewGenTerra : ModStdWorldGen
 
     private void Generate(IServerChunk[] chunks, int chunkX, int chunkZ)
     {
+        layerFullyEmpty ??= new bool[sapi.WorldManager.MapSizeY];
+        layerFullySolid ??= new bool[sapi.WorldManager.MapSizeY];
+
         IMapChunk mapChunk = chunks[0].MapChunk;
 
         int rockId = GlobalConfig.GetInstance(sapi).defaultRockId;
@@ -294,10 +297,7 @@ public class NewGenTerra : ModStdWorldGen
         // Get cached river region.
         int plateX = chunkX / riverConfig.ChunksInRegion;
         int plateZ = chunkZ / riverConfig.ChunksInRegion;
-        RiverRegion plate = ObjectCacheUtil.GetOrCreate(sapi, $"{plateX}-{plateZ}", () =>
-        {
-            return new RiverRegion(sapi, plateX, plateZ);
-        });
+        RiverRegion plate = RiverRegionCache.GetOrCreate(sapi, plateX, plateZ);
 
         // Get rivers that are valid to be tested in this chunk.
         RiverSegment[] validRivers = plate.GetSegmentsNearChunk(chunkX, chunkZ);
@@ -311,6 +311,9 @@ public class NewGenTerra : ModStdWorldGen
         Vector2d globalRegionStart = plate.GlobalRegionStart;
         RiverSample[,] samples = new RiverSample[32, 32];
         double maxValleyWidth = riverConfig.maxValleyWidth;
+
+        bool[] tsEmpty = layerFullyEmpty;
+        bool[] tsSolid = layerFullySolid;
 
         Parallel.For(0, chunkSize * chunkSize, new ParallelOptions() { MaxDegreeOfParallelism = maxThreads }, chunkIndex2d =>
         {
@@ -463,14 +466,14 @@ public class NewGenTerra : ModStdWorldGen
                 if (threshold <= noiseBoundMin)
                 {
                     columnBlockSolidities[posY] = true; // Yes terrain block, fill with stone.
-                    layerFullyEmpty[posY] = false; // (Thread safe even when this is parallel).
+                    tsEmpty[posY] = false; // (Thread safe even when this is parallel).
                 }
                 else if (!(threshold < noiseBoundMax)) // Second case also catches NaN if it were to ever happen.
                 {
-                    layerFullySolid[posY] = false; // No terrain block (thread safe even when this is parallel).
+                    tsSolid[posY] = false; // No terrain block (thread safe even when this is parallel).
 
                     // We can now exit the loop early, because empirical testing shows that once the threshold has exceeded the max noise bound, it never returns to a negative noise value at any higher y value in the same blocks column. This represents air well above the "interesting" part of the terrain. Tested for all world heights in the range 256-1536, tested with arches, overhangs, etc.
-                    for (int yAbove = posY + 1; yAbove <= mapSizeYm2; yAbove++) layerFullySolid[yAbove] = false;
+                    for (int yAbove = posY + 1; yAbove <= mapSizeYm2; yAbove++) tsSolid[yAbove] = false;
                     break;
                 }
                 else // But sometimes we do.
@@ -481,11 +484,11 @@ public class NewGenTerra : ModStdWorldGen
                     if (noiseSign > 0)  // Solid.
                     {
                         columnBlockSolidities[posY] = true; // Yes, terrain block.
-                        layerFullyEmpty[posY] = false; // Thread safe even when this is parallel.
+                        tsEmpty[posY] = false; // Thread safe even when this is parallel.
                     }
                     else
                     {
-                        layerFullySolid[posY] = false; // Thread safe even when this is parallel.
+                        tsSolid[posY] = false; // Thread safe even when this is parallel.
                     }
                 }
             }
@@ -495,8 +498,8 @@ public class NewGenTerra : ModStdWorldGen
             {
                 for (int posY = 1; posY <= mapSizeYm2; posY++)
                 {
-                    layerFullyEmpty[posY] = false;
-                    layerFullySolid[posY] = false;
+                    tsEmpty[posY] = false;
+                    tsSolid[posY] = false;
                 }
             }
         });
