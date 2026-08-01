@@ -317,6 +317,17 @@ public class RiverRegion
         }
     }
 
+    private bool IsWithinRegion(Vector2d position, double padding)
+    {
+        return position.X >= padding && position.X <= config.RegionSize - padding
+            && position.Y >= padding && position.Y <= config.RegionSize - padding;
+    }
+
+    private bool IsWithinRegion(Vector2d startPos, Vector2d endPos, double padding)
+    {
+        return IsWithinRegion(startPos, padding) && IsWithinRegion(endPos, padding);
+    }
+
     public bool GenerateRiver(double angle, Vector2d startPos, int stage, RiverNode? parentNode, River river, int errorLevel, Queue<GenerationRequest> generationQueue)
     {
         // If this branch exceeds max nodes, return.
@@ -345,8 +356,9 @@ public class RiverRegion
             }
         }
 
-        // Don't go out of bounds.
-        if (endPos.X < 0 || endPos.X > config.RegionSize || endPos.Y < 0 || endPos.Y > config.RegionSize) intersecting = true;
+        // Keep segment offsets and the complete valley inside the region.
+        double nodePadding = config.segmentOffset + config.maxValleyWidth + config.maxSize;
+        if (!IsWithinRegion(startPos, endPos, nodePadding)) intersecting = true;
 
         // Don't go downhill.
         double startDist = GetZoneAt(startPos.X, startPos.Y).oceanDistance;
@@ -413,6 +425,9 @@ public class RiverRegion
         int lakeSize = rand.NextInt(maxSize - minSize) + minSize;
 
         Vector2d delta = parent.endPos + (RiverMath.DegreesToNormal(angle) * 100);
+
+        // Keep the lake extension and its valley inside the region.
+        if (!IsWithinRegion(parent.endPos, delta, config.maxValleyWidth + lakeSize)) return;
 
         RiverNode lakeNode = new(parent.endPos, delta, river, null, rand, new RiverSegment[1])
         {
