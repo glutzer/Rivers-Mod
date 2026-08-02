@@ -29,12 +29,9 @@ public class GravelGen : ModStdWorldGen
 
         sapi = api;
 
-        if (RiverConfig.Loaded.gravelBeaches)
-        {
-            sapi.Event.InitWorldGenerator(InitWorldGen, "standard");
-            sapi.Event.GetWorldgenBlockAccessor(OnWorldGenBlockAccessor);
-            sapi.Event.ChunkColumnGeneration(OnChunkColumnGen, EnumWorldGenPass.Terrain, "standard");
-        }
+        sapi.Event.InitWorldGenerator(InitWorldGen, "standard");
+        sapi.Event.GetWorldgenBlockAccessor(OnWorldGenBlockAccessor);
+        sapi.Event.ChunkColumnGeneration(OnChunkColumnGen, EnumWorldGenPass.Terrain, "standard");
     }
 
     private void OnWorldGenBlockAccessor(IChunkProviderThread chunkProvider)
@@ -73,6 +70,8 @@ public class GravelGen : ModStdWorldGen
 
     private void OnChunkColumnGen(IChunkColumnGenerateRequest request)
     {
+        if (!RiverConfig.Loaded.gravelBeaches) return;
+
         IMapChunk mapChunk = request.Chunks[0].MapChunk;
 
         int chunkX = request.ChunkX;
@@ -108,7 +107,8 @@ public class GravelGen : ModStdWorldGen
                 if (dist < maxDist)
                 {
                     int topRock = topRocks[(z * 32) + x];
-                    int gravelId = gravelMappings[topRock];
+
+                    if (!gravelMappings.TryGetValue(topRock, out int gravelId)) continue;
 
                     BlockPos pos = new(startX + x, height + 1, startZ + z, 0);
 

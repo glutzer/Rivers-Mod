@@ -1,5 +1,4 @@
-﻿using Vintagestory.API.MathTools;
-using Vintagestory.API.Server;
+﻿using Vintagestory.API.Server;
 
 namespace Rivers;
 
@@ -9,7 +8,6 @@ namespace Rivers;
 public abstract class WorldGenPartial : WorldGenBase
 {
     public ICoreServerAPI sapi = null!;
-    public LCGRandom chunkRand = null!;
 
     public abstract int ChunkRange { get; }
 

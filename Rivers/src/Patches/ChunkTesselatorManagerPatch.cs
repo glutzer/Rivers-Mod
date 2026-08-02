@@ -96,7 +96,7 @@ public class ChunkTesselatorManagerPatch
         if (BottomChunk != null && !BottomChunk.Empty)
         {
             varsTwo.flowVectors = ModDataCache.GetFlowVectors(BottomChunk, game.api, chunkX, chunkZ);
-            varsTwo.riverSpeed = RiversMod.RiverSpeed;
+            varsTwo.riverSpeed = RiversMod.ClientRiverSpeed;
         }
 
         BottomChunk = null!;

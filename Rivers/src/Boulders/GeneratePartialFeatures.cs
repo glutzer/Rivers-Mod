@@ -33,8 +33,6 @@ public class GeneratePartialFeatures : WorldGenPartial
             sapi.Event.ChunkColumnGeneration(ChunkColumnGeneration, EnumWorldGenPass.Vegetation, "standard");
             sapi.Event.GetWorldgenBlockAccessor(OnWorldGenBlockAccessor);
         }
-
-        chunkRand = new LCGRandom(sapi.World.Seed);
     }
 
     private void OnWorldGenBlockAccessor(IChunkProviderThread chunkProvider)
@@ -68,15 +66,14 @@ public class GeneratePartialFeatures : WorldGenPartial
             noise = new Noise(0, 0.05f, 2)
         };
 
-        if (RiverConfig.Loaded.boulders)
-        {
-            features.Add(riverBoulder);
-            features.Add(tinyBoulder);
-        }
+        features.Add(riverBoulder);
+        features.Add(tinyBoulder);
     }
 
     public override void GeneratePartial(IServerChunk[] chunks, int mainChunkX, int mainChunkZ, int generatingChunkX, int generatingChunkZ)
     {
+        LCGRandom chunkRand = new(sapi.World.Seed);
+
         chunkRand.InitPositionSeed(generatingChunkX, generatingChunkZ);
 
         IMapChunk? mapChunk = blockAccessor.GetMapChunk(generatingChunkX, generatingChunkZ);
@@ -109,6 +106,8 @@ public class GeneratePartialFeatures : WorldGenPartial
 
         foreach (PartialFeature feature in features)
         {
+            if (!feature.ShouldGenerateFeature()) continue;
+
             for (int x = 0; x < feature.tries; x++)
             {
                 if (chunkRand.NextFloat() >= feature.chance) continue;

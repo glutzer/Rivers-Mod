@@ -43,6 +43,11 @@ public class PartialFeature
     {
         return true;
     }
+
+    public virtual bool ShouldGenerateFeature()
+    {
+        return true;
+    }
 }
 
 public class FeatureBoundingBox

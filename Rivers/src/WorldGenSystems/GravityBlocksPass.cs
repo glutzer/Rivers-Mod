@@ -30,11 +30,8 @@ public class GravityBlocksPass : ModStdWorldGen
     {
         sapi = api;
 
-        if (RiverConfig.Loaded.fixGravityBlocks)
-        {
-            api.Event.InitWorldGenerator(InitWorldGen, "standard");
-            api.Event.ChunkColumnGeneration(OnChunkColumnGen, EnumWorldGenPass.Terrain, "standard");
-        }
+        api.Event.InitWorldGenerator(InitWorldGen, "standard");
+        api.Event.ChunkColumnGeneration(OnChunkColumnGen, EnumWorldGenPass.Terrain, "standard");
     }
 
     public void InitWorldGen()
@@ -51,6 +48,8 @@ public class GravityBlocksPass : ModStdWorldGen
 
     public void OnChunkColumnGen(IChunkColumnGenerateRequest request)
     {
+        if (!RiverConfig.Loaded.fixGravityBlocks) return;
+
         IServerChunk[] chunks = request.Chunks;
         ushort[] terrainHeightMap = request.Chunks[0].MapChunk.WorldGenTerrainHeightMap;
         int[] topRockIdMap = request.Chunks[0].MapChunk.TopRockIdMap;

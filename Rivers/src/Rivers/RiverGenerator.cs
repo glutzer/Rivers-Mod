@@ -28,6 +28,15 @@ public class RiverGenerator
         riverDistortionX = new Noise(0, config.riverFrequency, config.riverOctaves, config.riverGain, config.riverLacunarity);
         riverDistortionZ = new Noise(2, config.riverFrequency, config.riverOctaves, config.riverGain, config.riverLacunarity);
         strength = config.riverDistortionStrength;
+
+        sapi.ModLoader.GetModSystem<RiversMod>().OnRiverConfigChanged += c =>
+        {
+            riverDepth = c.riverDepth * multi;
+            baseDepth = c.baseDepth * multi;
+            riverDistortionX = new Noise(0, c.riverFrequency, c.riverOctaves, c.riverGain, c.riverLacunarity);
+            riverDistortionZ = new Noise(2, c.riverFrequency, c.riverOctaves, c.riverGain, c.riverLacunarity);
+            strength = c.riverDistortionStrength;
+        };
     }
 
     public RiverSample SampleRiver(RiverSegment[] segments, double x, double z)

@@ -16,6 +16,12 @@ public class RiverDebugMapMessage
 
     [ProtoMember(2)]
     public List<RiverMapSegmentData> RegionSegments = [];
+
+    [ProtoMember(3)]
+    public bool PaintCurrentRiversRed;
+
+    [ProtoMember(4)]
+    public bool Clear;
 }
 
 [ProtoContract]
@@ -40,10 +46,12 @@ public class RiverMapSegmentData
 public class RiverDebugMapLayer : MapLayer
 {
     private readonly List<RiverMapSegmentData> riverSegments = [];
+    private readonly List<RiverMapSegmentData> redRiverSegments = [];
     private readonly List<RiverMapSegmentData> regionSegments = [];
     private Vec2f startView = new();
     private Vec2f endView = new();
     private readonly Vec4f riverColor = new(0.12f, 0.43f, 0.92f, 0.95f);
+    private readonly Vec4f redRiverColor = new(0.95f, 0.12f, 0.12f, 0.95f);
     private readonly Vec4f regionColor = new(1f, 0.78f, 0.1f, 0.95f);
     private readonly Matrixf mvMat = new();
 
@@ -61,21 +69,32 @@ public class RiverDebugMapLayer : MapLayer
         }
     }
 
-    private bool HasRenderableData => riverSegments.Count > 0 || regionSegments.Count > 0;
+    private bool HasRenderableData => riverSegments.Count > 0 || redRiverSegments.Count > 0 || regionSegments.Count > 0;
 
     public override string Title => "River Debug";
     public override string LayerGroupCode => "waypoints";
     public override EnumMapAppSide DataSide => EnumMapAppSide.Client;
     public override bool RequireChunkLoaded => false;
 
-    public void SetData(List<RiverMapSegmentData> rivers, List<RiverMapSegmentData> regions)
+    public void AddData(List<RiverMapSegmentData>? rivers, List<RiverMapSegmentData>? regions)
+    {
+        if (rivers?.Count > 0) riverSegments.AddRange(rivers);
+        if (regions?.Count > 0) regionSegments.AddRange(regions);
+    }
+
+    public void Clear()
     {
         riverSegments.Clear();
+        redRiverSegments.Clear();
         regionSegments.Clear();
+    }
 
-        if (rivers.Count > 0) riverSegments.AddRange(rivers);
-        if (regions.Count > 0) regionSegments.AddRange(regions);
+    public void PaintCurrentRiversRed()
+    {
+        if (riverSegments.Count == 0) return;
 
+        redRiverSegments.AddRange(riverSegments);
+        riverSegments.Clear();
     }
 
     public override void Render(GuiElementMap mapElem, float dt)
@@ -84,6 +103,7 @@ public class RiverDebugMapLayer : MapLayer
 
         float pixelsPerBlock = (float)(mapElem.Bounds.InnerWidth / mapElem.CurrentBlockViewBounds.Width);
 
+        RenderSegments(mapElem, quadModel, redRiverColor, redRiverSegments, pixelsPerBlock, true);
         RenderSegments(mapElem, quadModel, riverColor, riverSegments, pixelsPerBlock, true);
         RenderSegments(mapElem, quadModel, regionColor, regionSegments, pixelsPerBlock, false);
     }

@@ -34,7 +34,7 @@ public class EntityBehaviorPhysicsPatch
 
                 if (flowVectors != null)
                 {
-                    float riverSpeed = RiversMod.RiverSpeed;
+                    float riverSpeed = RiversMod.ClientRiverSpeed;
                     float density = 300f / GameMath.Clamp(entity.MaterialDensity, 750f, 2500f) * (60 * dt); // Calculate density.
                     if (controls.ShiftKey) density /= 2;
                     pos.Motion.Add(flowVectors[ChunkMath.ChunkIndex2d((int)pos.X % 32, (int)pos.Z % 32)] * 0.0025 * density * riverSpeed, 0, flowVectors[ChunkMath.ChunkIndex2d((int)pos.X % 32, (int)pos.Z % 32) + 1024] * 0.0025 * density * riverSpeed);
@@ -54,7 +54,7 @@ public class EntityBehaviorPhysicsPatch
         {
             if (__instance.ForwardSpeed != 0.0)
             {
-                float riverSpeed = RiversMod.RiverSpeed;
+                float riverSpeed = RiversMod.ClientRiverSpeed;
 
                 int chunkX = (int)__instance.Pos.X / 32;
                 int chunkZ = (int)__instance.Pos.Z / 32;

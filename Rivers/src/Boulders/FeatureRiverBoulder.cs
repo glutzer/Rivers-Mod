@@ -49,6 +49,11 @@ public class FeatureRiverBoulder : PartialFeature
         });
     }
 
+    public override bool ShouldGenerateFeature()
+    {
+        return RiverConfig.Loaded.boulders;
+    }
+
     public override bool CanGenerate(int localX, int posY, int localZ, ushort riverDistance, bool dry)
     {
         return riverDistance <= 0 && posY < TerraGenConfig.seaLevel + 2;
