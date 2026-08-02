@@ -2,6 +2,7 @@
 using OpenTK.Mathematics;
 using ProtoBuf;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -20,6 +21,7 @@ public class RiversMod : ModSystem
 
     public IClientNetworkChannel clientChannel = null!;
     public IServerNetworkChannel serverChannel = null!;
+    private ICoreClientAPI? capi;
 
     public ICoreAPI api = null!;
 
@@ -28,11 +30,20 @@ public class RiversMod : ModSystem
         return 5;
     }
 
+    public override void Start(ICoreAPI api)
+    {
+        api.ModLoader.GetModSystem<WorldMapManager>().RegisterMapLayer<RiverDebugMapLayer>("riverdebug", 0.9);
+    }
+
     public override void StartClientSide(ICoreClientAPI api)
     {
+        capi = api;
+
         clientChannel = api.Network.RegisterChannel("rivers")
             .RegisterMessageType<SpeedMessage>()
-            .SetMessageHandler<SpeedMessage>(OnSpeedMessage);
+            .RegisterMessageType<RiverDebugMapMessage>()
+            .SetMessageHandler<SpeedMessage>(OnSpeedMessage)
+            .SetMessageHandler<RiverDebugMapMessage>(OnRiverDebugMapMessage);
 
 #pragma warning disable CS0618 // Type or member is obsolete
         api.RegisterCommand(new RiverZoomCommand());
@@ -42,10 +53,11 @@ public class RiversMod : ModSystem
     public override void StartServerSide(ICoreServerAPI api)
     {
         serverChannel = api.Network.RegisterChannel("rivers")
-            .RegisterMessageType<SpeedMessage>();
+            .RegisterMessageType<SpeedMessage>()
+            .RegisterMessageType<RiverDebugMapMessage>();
 
 #pragma warning disable CS0618 // Type or member is obsolete
-        api.RegisterCommand(new RiverDebugCommand(api));
+        api.RegisterCommand(new RiverDebugCommand(api, serverChannel));
 #pragma warning restore CS0618 // Type or member is obsolete
 
         RiverSpeed = RiverConfig.Loaded.riverSpeed;
@@ -65,6 +77,17 @@ public class RiversMod : ModSystem
 
         // Check if singleplayer.
         RePatchFlow();
+    }
+
+    private void OnRiverDebugMapMessage(RiverDebugMapMessage message)
+    {
+        if (capi == null) return;
+
+        if (capi.ModLoader.GetModSystem<WorldMapManager>().MapLayers.FirstOrDefault(ml => ml is RiverDebugMapLayer) is RiverDebugMapLayer mapLayer)
+        {
+            mapLayer.SetData(message.RiverSegments, message.RegionSegments);
+            capi.ShowChatMessage($"River debug map updated ({message.RiverSegments.Count} river lines, {message.RegionSegments.Count} region lines).");
+        }
     }
 
     public override void StartPre(ICoreAPI api)
@@ -189,14 +212,16 @@ public class RiverZoomCommand : ClientChatCommand
 public class RiverDebugCommand : ServerChatCommand
 {
     public ICoreServerAPI sapi;
+    private readonly IServerNetworkChannel serverChannel;
 
-    public RiverDebugCommand(ICoreServerAPI sapi)
+    public RiverDebugCommand(ICoreServerAPI sapi, IServerNetworkChannel serverChannel)
     {
         this.sapi = sapi;
+        this.serverChannel = serverChannel;
 
         Command = "riverdebug";
-        Description = "Debug command for rivers";
-        Syntax = "/riverdebug";
+        Description = "River debug map commands: rivers, region, full, clear";
+        Syntax = "/riverdebug <rivers|region|full|clear>";
 
         RequiredPrivilege = Privilege.ban;
     }
@@ -205,120 +230,53 @@ public class RiverDebugCommand : ServerChatCommand
     {
         try
         {
-            if (sapi.ModLoader.GetModSystem<WorldMapManager>().MapLayers.FirstOrDefault(ml => ml is WaypointMapLayer) is not WaypointMapLayer wp) return;
+            if (player is not IServerPlayer serverPlayer || player.Entity == null)
+            {
+                return;
+            }
+
+            string mode = args.Length > 0 ? args[0].ToLowerInvariant() : string.Empty;
+
+            if (mode == "clear")
+            {
+                RiverDebugMapMessage clearMessage = new();
+                serverChannel.SendPacket(clearMessage, serverPlayer);
+                sapi.SendMessage(player, 0, "Cleared river debug map data.", EnumChatType.Notification);
+                return;
+            }
+
+            if (mode is not ("rivers" or "region" or "full"))
+            {
+                sapi.SendMessage(player, 0, "Usage: /riverdebug <rivers|region|full|clear>", EnumChatType.Notification);
+                return;
+            }
 
             int worldX = (int)player.Entity.Pos.X;
             int worldZ = (int)player.Entity.Pos.Z;
             int chunkX = worldX / 32;
             int chunkZ = worldZ / 32;
 
-            int chunksInPlate = RiverConfig.Loaded.zonesInRegion * RiverConfig.Loaded.zoneSize / 32;
+            int chunksInRegion = RiverConfig.Loaded.zonesInRegion * RiverConfig.Loaded.zoneSize / 32;
+            int regionX = chunkX / chunksInRegion;
+            int regionZ = chunkZ / chunksInRegion;
 
-            int plateX = chunkX / chunksInPlate;
-            int plateZ = chunkZ / chunksInPlate;
+            RiverRegion region = RiverRegionCache.GetOrCreate(sapi, regionX, regionZ);
+            Vector2d regionStart = region.GlobalRegionStart;
 
-            RiverRegion plate = RiverRegionCache.GetOrCreate(sapi, plateX, plateZ);
+            RiverDebugMapMessage message = new();
 
-            Vector2d plateStart = plate.GlobalRegionStart;
-
-            if (args[0] == "starts")
+            if (mode is "rivers" or "full")
             {
-                foreach (RiverSegment segment in plate.riverStarts)
-                {
-                    int r = sapi.World.Rand.Next(255);
-                    int g = sapi.World.Rand.Next(255);
-                    int b = sapi.World.Rand.Next(255);
-                    MapRiver(wp, segment, r, g, b, player, plateStart);
-                }
-
-                sapi.SendMessage(player, 0, $"{riversMapped} rivers, {biggestRiver} biggest. {biggestX - sapi.World.DefaultSpawnPosition.X}, {biggestZ - sapi.World.DefaultSpawnPosition.Z}.", EnumChatType.Notification);
-                riversMapped = 0;
-                biggestRiver = 0;
-                biggestX = 0;
-                biggestZ = 0;
-
-                wp.CallMethod("ResendWaypoints", player);
+                AddRiverSegments(message.RiverSegments, region, regionStart);
             }
 
-            if (args[0] == "full")
+            if (mode is "region" or "full")
             {
-                foreach (River river in plate.rivers)
-                {
-                    int r = sapi.World.Rand.Next(255);
-                    int g = sapi.World.Rand.Next(255);
-                    int b = sapi.World.Rand.Next(255);
-
-                    foreach (RiverNode node in river.nodes)
-                    {
-                        AddWaypoint(wp, "x", new Vec3d(node.startPos.X + plateStart.X, 0, node.startPos.Y + plateStart.Y), player.PlayerUID, r, g, b, "River " + node.startSize.ToString(), false);
-                    }
-                }
-
-                wp.CallMethod("ResendWaypoints", player);
+                AddRegionSegments(message.RegionSegments, regionStart);
             }
 
-            if (args[0] == "land")
-            {
-                foreach (RiverZone zone in plate.zones)
-                {
-                    if (zone.oceanZone)
-                    {
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 0, 100, 255, "River Ocean", false);
-                    }
-                    else
-                    {
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 255, 150, 150, "River Land", false);
-                    }
-                }
-
-                wp.CallMethod("ResendWaypoints", player);
-            }
-
-            if (args[0] == "ocean")
-            {
-                int oceanTiles = 0;
-
-                foreach (RiverZone zone in plate.zones)
-                {
-                    if (zone.oceanZone)
-                    {
-                        oceanTiles++;
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 0, 100, 255, "River Ocean", false);
-                    }
-                }
-
-                wp.CallMethod("ResendWaypoints", player);
-
-                sapi.SendMessage(player, 0, $"{oceanTiles} ocean tiles.", EnumChatType.Notification);
-            }
-
-            if (args[0] == "coastal")
-            {
-                int coastalTiles = 0;
-
-                foreach (RiverZone zone in plate.zones)
-                {
-                    if (zone.coastalZone)
-                    {
-                        coastalTiles++;
-                        AddWaypoint(wp, "x", new Vec3d(plateStart.X + zone.localZoneCenterPosition.X, 0, plateStart.Y + zone.localZoneCenterPosition.Y), player.PlayerUID, 255, 100, 255, "River Ocean", false);
-                    }
-                }
-
-                wp.CallMethod("ResendWaypoints", player);
-
-                sapi.SendMessage(player, 0, $"{coastalTiles} ocean tiles.", EnumChatType.Notification);
-            }
-
-            if (args[0] == "clear")
-            {
-                wp.Waypoints.Clear();
-
-                wp.Waypoints.RemoveAll(wp => wp.Title.StartsWith("River"));
-
-
-                wp.CallMethod("ResendWaypoints", player);
-            }
+            serverChannel.SendPacket(message, serverPlayer);
+            sapi.SendMessage(player, 0, $"Sent {message.RiverSegments.Count} river lines and {message.RegionSegments.Count} region lines.", EnumChatType.Notification);
         }
         catch (Exception e)
         {
@@ -326,35 +284,50 @@ public class RiverDebugCommand : ServerChatCommand
         }
     }
 
-    public int riversMapped = 0;
-    public int biggestRiver = 0;
-    public int biggestX = 0;
-    public int biggestZ = 0;
-
-    public void MapRiver(WaypointMapLayer wp, RiverSegment segment, int r, int g, int b, IPlayer player, Vector2d plateStart)
+    private static void AddRiverSegments(List<RiverMapSegmentData> target, RiverRegion region, Vector2d regionStart)
     {
-        AddWaypoint(wp, "x", new Vec3d(segment.startPos.X + plateStart.X, 0, segment.startPos.Y + plateStart.Y), player.PlayerUID, r, g, b, $"River {segment.riverNode?.startSize}");
-
-        if (segment.riverNode?.startSize > biggestRiver)
+        foreach (River river in region.rivers)
         {
-            biggestRiver = (int)segment.riverNode.startSize;
-            biggestX = (int)(segment.startPos.X + plateStart.X);
-            biggestZ = (int)(segment.startPos.Y + plateStart.Y);
-        }
+            foreach (RiverNode node in river.nodes)
+            {
+                int count = node.segments.Length;
+                for (int i = 0; i < count; i++)
+                {
+                    RiverSegment segment = node.segments[i];
+                    float width = node.startSize;
 
-        riversMapped++;
+                    if (count > 1)
+                    {
+                        float t = (float)i / (count - 1);
+                        width = GameMath.Lerp(node.startSize, node.endSize, t);
+                    }
+
+                    width = Math.Max(1f, width);
+
+                    target.Add(new RiverMapSegmentData
+                    {
+                        StartX = segment.startPos.X + regionStart.X,
+                        StartZ = segment.startPos.Y + regionStart.Y,
+                        EndX = segment.endPos.X + regionStart.X,
+                        EndZ = segment.endPos.Y + regionStart.Y,
+                        Width = width
+                    });
+                }
+            }
+        }
     }
 
-    public static void AddWaypoint(WaypointMapLayer wp, string type, Vec3d worldPos, string playerUid, int r, int g, int b, string name, bool pin = true)
+    private static void AddRegionSegments(List<RiverMapSegmentData> target, Vector2d regionStart)
     {
-        wp.Waypoints.Add(new Waypoint
-        {
-            Color = ColorUtil.ColorFromRgba(r, g, b, 255),
-            Icon = type,
-            Pinned = pin,
-            Position = worldPos,
-            OwningPlayerUid = playerUid,
-            Title = name
-        });
+        double size = RiverConfig.Loaded.zonesInRegion * RiverConfig.Loaded.zoneSize;
+        double x1 = regionStart.X;
+        double z1 = regionStart.Y;
+        double x2 = x1 + size;
+        double z2 = z1 + size;
+
+        target.Add(new RiverMapSegmentData { StartX = x1, StartZ = z1, EndX = x2, EndZ = z1, Width = 2f });
+        target.Add(new RiverMapSegmentData { StartX = x2, StartZ = z1, EndX = x2, EndZ = z2, Width = 2f });
+        target.Add(new RiverMapSegmentData { StartX = x2, StartZ = z2, EndX = x1, EndZ = z2, Width = 2f });
+        target.Add(new RiverMapSegmentData { StartX = x1, StartZ = z2, EndX = x1, EndZ = z1, Width = 2f });
     }
 }

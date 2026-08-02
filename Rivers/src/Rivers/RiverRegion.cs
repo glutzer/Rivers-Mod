@@ -40,6 +40,8 @@ public class RiverRegion
     // Padded nodes for preventing overlapping generation; also don't need to test intersects with other rivers.
     public RBush<RiverNode> paddedNodeBounds = new();
 
+    private bool isDifferentOceanTypeDetected;
+
     /// <summary>
     /// Takes the global chunk position.
     /// Retrieves all segments that must be tested.
@@ -514,12 +516,45 @@ public class RiverRegion
         MapLayerBase oceanGen = genMaps.GetField<MapLayerBase>("oceanGen");
         IntDataMap2D oceanMap;
 
-        try
+        if (!isDifferentOceanTypeDetected)
         {
-            object parent = oceanGen.GetField<object>("parent");
-            List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
-            parent.SetField("requireLandAt", new List<XZ>());
+            try
+            {
+                object parent = oceanGen.GetField<object>("parent");
+                List<XZ> requireLandAt = parent.GetField<List<XZ>>("requireLandAt");
+                parent.SetField("requireLandAt", new List<XZ>());
 
+                oceanMap = new()
+                {
+                    Size = noiseSizeOcean + (2 * oceanPadding),
+                    TopLeftPadding = oceanPadding,
+                    BottomRightPadding = oceanPadding,
+                    Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                        (regionZ * noiseSizeOcean) - oceanPadding,
+                        noiseSizeOcean + (2 * oceanPadding),
+                        noiseSizeOcean + (2 * oceanPadding))
+                };
+
+                parent.SetField("requireLandAt", requireLandAt);
+            }
+            catch // Ocean map has been changed to another field.
+            {
+                oceanMap = new()
+                {
+                    Size = noiseSizeOcean + (2 * oceanPadding),
+                    TopLeftPadding = oceanPadding,
+                    BottomRightPadding = oceanPadding,
+                    Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
+                    (regionZ * noiseSizeOcean) - oceanPadding,
+                    noiseSizeOcean + (2 * oceanPadding),
+                    noiseSizeOcean + (2 * oceanPadding))
+                };
+
+                isDifferentOceanTypeDetected = true;
+            }
+        }
+        else
+        {
             oceanMap = new()
             {
                 Size = noiseSizeOcean + (2 * oceanPadding),
@@ -529,21 +564,6 @@ public class RiverRegion
                     (regionZ * noiseSizeOcean) - oceanPadding,
                     noiseSizeOcean + (2 * oceanPadding),
                     noiseSizeOcean + (2 * oceanPadding))
-            };
-
-            parent.SetField("requireLandAt", requireLandAt);
-        }
-        catch // Ocean map has been changed to another field.
-        {
-            oceanMap = new()
-            {
-                Size = noiseSizeOcean + (2 * oceanPadding),
-                TopLeftPadding = oceanPadding,
-                BottomRightPadding = oceanPadding,
-                Data = oceanGen.GenLayer((regionX * noiseSizeOcean) - oceanPadding,
-                (regionZ * noiseSizeOcean) - oceanPadding,
-                noiseSizeOcean + (2 * oceanPadding),
-                noiseSizeOcean + (2 * oceanPadding))
             };
         }
 
